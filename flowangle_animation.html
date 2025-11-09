@@ -69,6 +69,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 20px;
         }
 
         #keyframes-container {
@@ -123,24 +124,38 @@
             border-top: 1px solid #333;
         }
 
-        .add-keyframe-btn {
-            min-width: 120px;
-            height: 120px;
-            background: #2a2a2a;
-            border: 2px dashed #555;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            color: #666;
-            transition: all 0.2s;
+        /* Pulse Controls */
+        #pulse-controls {
+            padding: 15px 20px;
+            background: #222;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            border-top: 1px solid #333;
         }
 
-        .add-keyframe-btn:hover {
+        .pulse-param {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+
+        .pulse-param.active {
             border-color: #6cf;
-            color: #6cf;
+        }
+
+        .pulse-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .pulse-controls-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
         }
 
         /* Control Groups */
@@ -163,7 +178,7 @@
         }
 
         input[type="range"] {
-            width: 150px;
+            width: 100%;
             height: 4px;
             background: #333;
             border-radius: 2px;
@@ -187,6 +202,16 @@
             border-radius: 50%;
             cursor: pointer;
             border: none;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 6px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            border-radius: 4px;
+            font-size: 12px;
         }
 
         button {
@@ -217,14 +242,20 @@
             background: #333;
         }
 
-        /* Pulse Controls */
-        #pulse-controls {
-            padding: 10px 20px;
-            background: #222;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            border-top: 1px solid #333;
+        .play-btn {
+            background: #4a4;
+        }
+
+        .play-btn:hover {
+            background: #6c6;
+        }
+
+        .play-btn.playing {
+            background: #c44;
+        }
+
+        .play-btn.playing:hover {
+            background: #e66;
         }
 
         input[type="checkbox"] {
@@ -241,12 +272,19 @@
             border: 1px solid #333;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 11px;
         }
 
         .divider {
             width: 1px;
             height: 30px;
             background: #333;
+        }
+
+        .animation-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
     </style>
 </head>
@@ -315,41 +353,100 @@
 
     <!-- Pulse Animation Controls -->
     <div id="pulse-controls">
-        <label style="display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="pulse-enabled" onchange="togglePulse()">
-            <span>Pulse Mode</span>
-        </label>
-
-        <div class="control-group">
-            <label class="control-label">Target</label>
-            <select id="pulse-target">
-                <option value="curve">Curve Factor</option>
-                <option value="angle">Handle Angle</option>
-                <option value="rotation">Rotation</option>
-            </select>
+        <!-- Curve Factor Pulse -->
+        <div class="pulse-param" id="pulse-curve-param">
+            <div class="pulse-header">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
+                    <input type="checkbox" id="pulse-curve-enabled" onchange="updatePulseAnimations()">
+                    <span>Curve Factor Pulse</span>
+                </label>
+            </div>
+            <div class="pulse-controls-row">
+                <div class="control-group">
+                    <label class="control-label">Range (±)</label>
+                    <input type="range" id="pulse-curve-range" min="0.1" max="2" step="0.1" value="0.5" onchange="updatePulseAnimations()">
+                    <span class="control-value" id="pulse-curve-range-value">0.5</span>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Speed</label>
+                    <input type="range" id="pulse-curve-speed" min="0.5" max="5" step="0.1" value="2" onchange="updatePulseAnimations()">
+                    <span class="control-value" id="pulse-curve-speed-value">2x</span>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Easing</label>
+                    <select id="pulse-curve-easing" onchange="updatePulseAnimations()">
+                        <option value="linear">Linear</option>
+                        <option value="easeInOut" selected>Ease In-Out</option>
+                        <option value="easeIn">Ease In</option>
+                        <option value="easeOut">Ease Out</option>
+                        <option value="bounce">Bounce</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
-        <div class="control-group">
-            <label class="control-label">Range (±)</label>
-            <input type="range" id="pulse-range" min="0.1" max="2" step="0.1" value="0.5">
-            <span class="control-value" id="pulse-range-value">0.5</span>
+        <!-- Handle Angle Pulse -->
+        <div class="pulse-param" id="pulse-angle-param">
+            <div class="pulse-header">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
+                    <input type="checkbox" id="pulse-angle-enabled" onchange="updatePulseAnimations()">
+                    <span>Handle Angle Pulse</span>
+                </label>
+            </div>
+            <div class="pulse-controls-row">
+                <div class="control-group">
+                    <label class="control-label">Range (±°)</label>
+                    <input type="range" id="pulse-angle-range" min="5" max="40" step="1" value="20" onchange="updatePulseAnimations()">
+                    <span class="control-value" id="pulse-angle-range-value">20°</span>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Speed</label>
+                    <input type="range" id="pulse-angle-speed" min="0.5" max="5" step="0.1" value="1.5" onchange="updatePulseAnimations()">
+                    <span class="control-value" id="pulse-angle-speed-value">1.5x</span>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Easing</label>
+                    <select id="pulse-angle-easing" onchange="updatePulseAnimations()">
+                        <option value="linear">Linear</option>
+                        <option value="easeInOut" selected>Ease In-Out</option>
+                        <option value="easeIn">Ease In</option>
+                        <option value="easeOut">Ease Out</option>
+                        <option value="bounce">Bounce</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
-        <div class="control-group">
-            <label class="control-label">Speed</label>
-            <input type="range" id="pulse-speed" min="0.5" max="5" step="0.1" value="2">
-            <span class="control-value" id="pulse-speed-value">2x</span>
-        </div>
-
-        <div class="control-group">
-            <label class="control-label">Easing</label>
-            <select id="pulse-easing">
-                <option value="linear">Linear</option>
-                <option value="easeInOut">Ease In-Out</option>
-                <option value="easeIn">Ease In</option>
-                <option value="easeOut">Ease Out</option>
-                <option value="bounce">Bounce</option>
-            </select>
+        <!-- Rotation Pulse -->
+        <div class="pulse-param" id="pulse-rotation-param">
+            <div class="pulse-header">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
+                    <input type="checkbox" id="pulse-rotation-enabled" onchange="updatePulseAnimations()">
+                    <span>Rotation Pulse</span>
+                </label>
+            </div>
+            <div class="pulse-controls-row">
+                <div class="control-group">
+                    <label class="control-label">Range (±°)</label>
+                    <input type="range" id="pulse-rotation-range" min="10" max="180" step="5" value="90" onchange="updatePulseAnimations()">
+                    <span class="control-value" id="pulse-rotation-range-value">90°</span>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Speed</label>
+                    <input type="range" id="pulse-rotation-speed" min="0.5" max="5" step="0.1" value="1" onchange="updatePulseAnimations()">
+                    <span class="control-value" id="pulse-rotation-speed-value">1x</span>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Easing</label>
+                    <select id="pulse-rotation-easing" onchange="updatePulseAnimations()">
+                        <option value="linear">Linear</option>
+                        <option value="easeInOut" selected>Ease In-Out</option>
+                        <option value="easeIn">Ease In</option>
+                        <option value="easeOut">Ease Out</option>
+                        <option value="bounce">Bounce</option>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -357,7 +454,20 @@
     <div id="timeline">
         <div id="timeline-header">
             <span style="font-weight: bold; color: #6cf;">Keyframes</span>
-            <button onclick="addKeyframe()">+ Add Keyframe</button>
+            <div class="animation-controls">
+                <div class="control-group">
+                    <label class="control-label">Frame Length</label>
+                    <input type="number" id="frame-length" min="1" max="30" value="5" style="width: 60px;">
+                    <span class="control-value"><span id="frame-length-value">5</span>s</span>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Transition</label>
+                    <input type="number" id="transition-time" min="0" max="100" value="20" style="width: 60px;">
+                    <span class="control-value"><span id="transition-value">20</span>%</span>
+                </div>
+                <button id="play-btn" class="play-btn" onclick="togglePlay()">▶ Play</button>
+                <button onclick="addKeyframe()">+ Add Keyframe</button>
+            </div>
         </div>
         <div id="keyframes-container">
             <!-- Keyframes will be added here -->
@@ -368,8 +478,11 @@
         // State
         let keyframes = [];
         let activeKeyframeIndex = -1;
-        let pulseAnimation = null;
+        let pulseAnimations = {};
         let pulseStartTime = 0;
+        let keyframeAnimation = null;
+        let isPlaying = false;
+        let playStartTime = 0;
 
         // Easing functions
         const easingFunctions = {
@@ -389,6 +502,7 @@
 
         // Initialize
         updatePreview();
+        updatePulseAnimations();
 
         function getCurrentState() {
             return {
@@ -417,15 +531,24 @@
             document.getElementById('curve-value').textContent = state.curveFactor.toFixed(2);
             document.getElementById('handle-angle-value').textContent = state.handleAngle + '°';
             document.getElementById('rotation-value').textContent = state.rotation + '°';
-            document.getElementById('pulse-range-value').textContent = document.getElementById('pulse-range').value;
-            document.getElementById('pulse-speed-value').textContent = document.getElementById('pulse-speed').value + 'x';
+
+            // Update pulse control values
+            document.getElementById('pulse-curve-range-value').textContent = document.getElementById('pulse-curve-range').value;
+            document.getElementById('pulse-curve-speed-value').textContent = document.getElementById('pulse-curve-speed').value + 'x';
+            document.getElementById('pulse-angle-range-value').textContent = document.getElementById('pulse-angle-range').value + '°';
+            document.getElementById('pulse-angle-speed-value').textContent = document.getElementById('pulse-angle-speed').value + 'x';
+            document.getElementById('pulse-rotation-range-value').textContent = document.getElementById('pulse-rotation-range').value + '°';
+            document.getElementById('pulse-rotation-speed-value').textContent = document.getElementById('pulse-rotation-speed').value + 'x';
+
+            document.getElementById('frame-length-value').textContent = document.getElementById('frame-length').value;
+            document.getElementById('transition-value').textContent = document.getElementById('transition-time').value;
 
             // Generate SVG
             const svg = generateFlowAngle(state);
             document.getElementById('svg-preview').innerHTML = svg;
 
             // Update active keyframe if exists
-            if (activeKeyframeIndex >= 0) {
+            if (activeKeyframeIndex >= 0 && !isPlaying) {
                 keyframes[activeKeyframeIndex] = state;
                 updateKeyframeDisplay();
             }
@@ -562,6 +685,7 @@
         }
 
         function selectKeyframe(index) {
+            if (isPlaying) return;
             activeKeyframeIndex = index;
             applyState(keyframes[index]);
             updateKeyframeDisplay();
@@ -585,53 +709,135 @@
             }
         }
 
-        function togglePulse() {
-            const enabled = document.getElementById('pulse-enabled').checked;
+        function updatePulseAnimations() {
+            // Stop all existing animations
+            Object.values(pulseAnimations).forEach(anim => {
+                if (anim) cancelAnimationFrame(anim);
+            });
+            pulseAnimations = {};
 
-            if (enabled) {
-                pulseStartTime = Date.now();
-                startPulse();
-            } else {
-                if (pulseAnimation) {
-                    cancelAnimationFrame(pulseAnimation);
-                    pulseAnimation = null;
-                }
-            }
+            // Update visual states
+            const curveEnabled = document.getElementById('pulse-curve-enabled').checked;
+            const angleEnabled = document.getElementById('pulse-angle-enabled').checked;
+            const rotationEnabled = document.getElementById('pulse-rotation-enabled').checked;
+
+            document.getElementById('pulse-curve-param').classList.toggle('active', curveEnabled);
+            document.getElementById('pulse-angle-param').classList.toggle('active', angleEnabled);
+            document.getElementById('pulse-rotation-param').classList.toggle('active', rotationEnabled);
+
+            // Start animations
+            if (curveEnabled) startPulse('curve');
+            if (angleEnabled) startPulse('angle');
+            if (rotationEnabled) startPulse('rotation');
         }
 
-        function startPulse() {
-            const target = document.getElementById('pulse-target').value;
-            const range = parseFloat(document.getElementById('pulse-range').value);
-            const speed = parseFloat(document.getElementById('pulse-speed').value);
-            const easingName = document.getElementById('pulse-easing').value;
+        function startPulse(param) {
+            const range = parseFloat(document.getElementById(`pulse-${param}-range`).value);
+            const speed = parseFloat(document.getElementById(`pulse-${param}-speed`).value);
+            const easingName = document.getElementById(`pulse-${param}-easing`).value;
             const easing = easingFunctions[easingName];
 
-            const baseState = {
+            const baseValues = {
                 curve: parseFloat(document.getElementById('curve-factor').value),
                 angle: parseFloat(document.getElementById('handle-angle').value),
                 rotation: parseFloat(document.getElementById('rotation').value)
             };
 
+            const startTime = Date.now();
+
             function animate() {
-                const elapsed = (Date.now() - pulseStartTime) / 1000;
+                const elapsed = (Date.now() - startTime) / 1000;
                 const cycle = (elapsed * speed) % 2;
                 const t = cycle < 1 ? cycle : 2 - cycle;
                 const easedT = easing(t);
-
                 const oscillation = (easedT - 0.5) * 2 * range;
 
-                if (target === 'curve') {
-                    document.getElementById('curve-factor').value = baseState.curve + oscillation;
-                } else if (target === 'angle') {
-                    document.getElementById('handle-angle').value = baseState.angle + oscillation * 20;
-                } else if (target === 'rotation') {
-                    document.getElementById('rotation').value = (baseState.rotation + oscillation * 180) % 360;
+                if (param === 'curve') {
+                    document.getElementById('curve-factor').value = baseValues.curve + oscillation;
+                } else if (param === 'angle') {
+                    document.getElementById('handle-angle').value = baseValues.angle + oscillation;
+                } else if (param === 'rotation') {
+                    document.getElementById('rotation').value = (baseValues.rotation + oscillation) % 360;
                 }
 
                 updatePreview();
 
-                if (document.getElementById('pulse-enabled').checked) {
-                    pulseAnimation = requestAnimationFrame(animate);
+                if (document.getElementById(`pulse-${param}-enabled`).checked) {
+                    pulseAnimations[param] = requestAnimationFrame(animate);
+                }
+            }
+
+            animate();
+        }
+
+        function togglePlay() {
+            if (keyframes.length < 2) {
+                alert('Add at least 2 keyframes to play animation');
+                return;
+            }
+
+            isPlaying = !isPlaying;
+            const btn = document.getElementById('play-btn');
+
+            if (isPlaying) {
+                btn.textContent = '⏸ Pause';
+                btn.classList.add('playing');
+                playStartTime = Date.now();
+                playKeyframeAnimation();
+            } else {
+                btn.textContent = '▶ Play';
+                btn.classList.remove('playing');
+                if (keyframeAnimation) {
+                    cancelAnimationFrame(keyframeAnimation);
+                    keyframeAnimation = null;
+                }
+            }
+        }
+
+        function interpolateState(state1, state2, t) {
+            return {
+                sides: Math.round(state1.sides + (state2.sides - state1.sides) * t),
+                curveFactor: state1.curveFactor + (state2.curveFactor - state1.curveFactor) * t,
+                handleAngle: state1.handleAngle + (state2.handleAngle - state1.handleAngle) * t,
+                rotation: state1.rotation + (state2.rotation - state1.rotation) * t,
+                showGuides: t < 0.5 ? state1.showGuides : state2.showGuides
+            };
+        }
+
+        function playKeyframeAnimation() {
+            const frameLength = parseFloat(document.getElementById('frame-length').value) * 1000;
+            const transitionPercent = parseFloat(document.getElementById('transition-time').value) / 100;
+            const totalFrames = keyframes.length;
+            const totalDuration = frameLength * totalFrames;
+
+            function animate() {
+                const elapsed = Date.now() - playStartTime;
+                const loopTime = elapsed % totalDuration;
+                const currentFrameIndex = Math.floor(loopTime / frameLength);
+                const nextFrameIndex = (currentFrameIndex + 1) % totalFrames;
+                const frameProgress = (loopTime % frameLength) / frameLength;
+
+                let state;
+                if (frameProgress < transitionPercent) {
+                    // In transition
+                    const prevFrameIndex = (currentFrameIndex - 1 + totalFrames) % totalFrames;
+                    const t = frameProgress / transitionPercent;
+                    const easedT = easingFunctions.easeInOut(t);
+                    state = interpolateState(keyframes[prevFrameIndex], keyframes[currentFrameIndex], easedT);
+                } else if (frameProgress > 1 - transitionPercent) {
+                    // In transition to next
+                    const t = (frameProgress - (1 - transitionPercent)) / transitionPercent;
+                    const easedT = easingFunctions.easeInOut(t);
+                    state = interpolateState(keyframes[currentFrameIndex], keyframes[nextFrameIndex], easedT);
+                } else {
+                    // Hold current frame
+                    state = keyframes[currentFrameIndex];
+                }
+
+                applyState(state);
+
+                if (isPlaying) {
+                    keyframeAnimation = requestAnimationFrame(animate);
                 }
             }
 
