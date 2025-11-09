@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FlowAngle Animation Studio</title>
+    <script src="constraints_manager.js"></script>
+    <script src="constraint_functions.js"></script>
     <style>
         * {
             margin: 0;
@@ -329,6 +331,298 @@
         .share-btn:hover {
             background: #6c6;
         }
+
+        /* Feedback Mode Styles */
+        .feedback-mode-container {
+            background: #2a2a2a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feedback-mode-container.active {
+            border-color: #fa0;
+            background: #3a2a1a;
+        }
+
+        .feedback-label {
+            font-weight: bold;
+            color: #fa0;
+        }
+
+        .constraint-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .constraint-btn {
+            padding: 4px 8px;
+            background: #333;
+            color: #6cf;
+            border: 1px solid #444;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .constraint-btn:hover {
+            background: #444;
+            border-color: #6cf;
+        }
+
+        .constraint-btn.active {
+            background: #6cf;
+            color: #000;
+            border-color: #6cf;
+        }
+
+        /* Constraint Manager Panel */
+        #constraint-manager {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            border: 2px solid #6cf;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+        }
+
+        #constraint-manager.visible {
+            display: flex;
+        }
+
+        .manager-header {
+            background: #222;
+            padding: 20px;
+            border-bottom: 2px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .manager-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #6cf;
+        }
+
+        .close-btn {
+            background: #c44;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            font-size: 20px;
+            color: white;
+        }
+
+        .close-btn:hover {
+            background: #e66;
+        }
+
+        .manager-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .manager-actions {
+            padding: 15px 20px;
+            background: #222;
+            border-top: 2px solid #333;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .constraint-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .constraint-table th {
+            background: #2a2a2a;
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            border-bottom: 2px solid #333;
+        }
+
+        .constraint-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+
+        .constraint-table tr:hover {
+            background: #222;
+        }
+
+        .constraint-value {
+            font-family: 'Monaco', monospace;
+            color: #6cf;
+        }
+
+        .action-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            background: #444;
+        }
+
+        .action-btn.delete {
+            background: #c44;
+            border-color: #c44;
+        }
+
+        .action-btn.delete:hover {
+            background: #e66;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2a2a2a;
+            color: #6cf;
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 2px solid #6cf;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 4px 20px rgba(102, 204, 255, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 3000;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        .notification.error {
+            border-color: #c44;
+            color: #c44;
+            box-shadow: 0 4px 20px rgba(204, 68, 68, 0.4);
+        }
+
+        .notification.success {
+            border-color: #4a4;
+            color: #4a4;
+            box-shadow: 0 4px 20px rgba(68, 170, 68, 0.4);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 1999;
+        }
+
+        .overlay.visible {
+            display: block;
+        }
+
+        .import-dialog {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .import-dialog textarea {
+            width: 100%;
+            min-height: 150px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            color: #6cf;
+            font-weight: bold;
+        }
+
+        .control-group-extended {
+            position: relative;
+        }
+
+        .range-indicator {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+            font-family: 'Monaco', monospace;
+        }
+
+        .range-indicator.feedback-active {
+            color: #fa0;
+        }
     </style>
 </head>
 <body>
@@ -355,28 +649,53 @@
             </div>
         </div>
 
-        <div class="control-group">
+        <div class="control-group control-group-extended">
             <label class="control-label">Curve Factor</label>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="range" id="curve-factor" min="-3" max="1" step="0.01" value="-0.66" oninput="updatePreview()">
                 <span class="control-value" id="curve-value">-0.66</span>
             </div>
+            <div class="range-indicator" id="curve-range-indicator">[-3.00 to 1.00]</div>
+            <div class="constraint-buttons" id="curve-constraints" style="display: none;">
+                <button class="constraint-btn" onclick="captureConstraint('curveFactor', 'min')">Set Min</button>
+                <button class="constraint-btn" onclick="captureConstraint('curveFactor', 'max')">Set Max</button>
+            </div>
         </div>
 
-        <div class="control-group">
+        <div class="control-group control-group-extended">
             <label class="control-label">Handle Angle</label>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="range" id="handle-angle" min="10" max="170" value="60" oninput="updatePreview()">
                 <span class="control-value" id="handle-angle-value">60°</span>
             </div>
+            <div class="range-indicator" id="angle-range-indicator">[10° to 170°]</div>
+            <div class="constraint-buttons" id="angle-constraints" style="display: none;">
+                <button class="constraint-btn" onclick="captureConstraint('handleAngle', 'min')">Set Min</button>
+                <button class="constraint-btn" onclick="captureConstraint('handleAngle', 'max')">Set Max</button>
+            </div>
         </div>
 
-        <div class="control-group">
+        <div class="control-group control-group-extended">
             <label class="control-label">Rotation</label>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="range" id="rotation" min="0" max="360" value="0" oninput="updatePreview()">
                 <span class="control-value" id="rotation-value">0°</span>
             </div>
+            <div class="range-indicator" id="rotation-range-indicator">[0° to 360°]</div>
+            <div class="constraint-buttons" id="rotation-constraints" style="display: none;">
+                <button class="constraint-btn" onclick="captureConstraint('rotation', 'min')">Set Min</button>
+                <button class="constraint-btn" onclick="captureConstraint('rotation', 'max')">Set Max</button>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="feedback-mode-container" id="feedback-mode-container">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                <input type="checkbox" id="feedback-mode" onchange="toggleFeedbackMode()">
+                <span class="feedback-label">Feedback Mode</span>
+            </label>
+            <button class="preset-btn" onclick="openConstraintManager()" style="font-size: 11px;">Manage Constraints</button>
         </div>
 
         <div class="divider"></div>
@@ -389,10 +708,63 @@
         <div class="divider"></div>
 
         <button class="share-btn" onclick="shareConfiguration()">Share Configuration</button>
+        <button onclick="downloadSVG()" style="background: #66c; color: #fff;">Download SVG</button>
+        <button onclick="downloadPNG()" style="background: #66c; color: #fff;">Download PNG</button>
     </div>
 
     <!-- Share notification -->
     <div id="share-notification">Link copied to clipboard!</div>
+
+    <!-- Generic notification -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Overlay for modal -->
+    <div id="overlay" class="overlay" onclick="closeConstraintManager()"></div>
+
+    <!-- Constraint Manager Panel -->
+    <div id="constraint-manager">
+        <div class="manager-header">
+            <div class="manager-title">Constraint Manager</div>
+            <button class="close-btn" onclick="closeConstraintManager()">×</button>
+        </div>
+        <div class="manager-content">
+            <!-- Statistics -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-label">Total N Values</div>
+                    <div class="stat-value" id="stat-n-values">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Constraints</div>
+                    <div class="stat-value" id="stat-constraints">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Mode</div>
+                    <div class="stat-value" id="stat-mode" style="font-size: 16px;">Normal</div>
+                </div>
+            </div>
+
+            <!-- Constraints Table -->
+            <div id="constraints-table-container"></div>
+
+            <!-- Import Dialog -->
+            <div class="import-dialog" id="import-dialog" style="display: none;">
+                <h3 style="margin-bottom: 10px; color: #6cf;">Import Constraints</h3>
+                <textarea id="import-textarea" placeholder="Paste JSON constraints here..."></textarea>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button onclick="importFromTextarea()">Import JSON</button>
+                    <button class="preset-btn" onclick="toggleImportDialog()">Cancel</button>
+                </div>
+            </div>
+        </div>
+        <div class="manager-actions">
+            <button onclick="exportConstraints()">Export to Clipboard</button>
+            <button onclick="toggleImportDialog()">Import from JSON</button>
+            <button onclick="importFromClipboard()">Import from Clipboard</button>
+            <button class="preset-btn" onclick="clearAllConstraints()">Clear All</button>
+            <button class="preset-btn" style="background: #c44; color: white;" onclick="resetConstraints()">Reset to Defaults</button>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <div id="main-content">
@@ -534,6 +906,17 @@
         let isPlaying = false;
         let playStartTime = 0;
 
+        // Constraint Manager
+        let constraintManager = null;
+        let feedbackMode = false;
+
+        // Parameter mapping for constraint system
+        const paramMap = {
+            'curveFactor': { id: 'curve-factor', display: 'Curve Factor', unit: '', decimals: 2 },
+            'handleAngle': { id: 'handle-angle', display: 'Handle Angle', unit: '°', decimals: 0 },
+            'rotation': { id: 'rotation', display: 'Rotation', unit: '°', decimals: 0 }
+        };
+
         // Easing functions
         const easingFunctions = {
             linear: t => t,
@@ -551,9 +934,17 @@
         };
 
         // Initialize
+        initConstraintManager(); // Initialize constraint manager
         loadFromURL(); // Load from URL first if parameters exist
         updatePreview();
         updatePulseAnimations();
+
+        // Update ranges when n changes
+        document.getElementById('sides').addEventListener('input', function() {
+            if (constraintManager) {
+                updateSliderRanges(false);
+            }
+        });
 
         function getCurrentState() {
             return {
@@ -939,10 +1330,19 @@
         }
 
         /**
-         * Decode URL hash parameters and apply to current state
-         * Handles both compact and full parameter names for backward compatibility
+         * Load shared configuration from database or URL hash
+         * Checks for /share/[id] path first, then falls back to hash parameters
          */
-        function loadFromURL() {
+        async function loadFromURL() {
+            // Check if URL contains /share/[id] pattern
+            const pathMatch = window.location.pathname.match(/\/share\/([a-zA-Z0-9_-]{8})/);
+
+            if (pathMatch) {
+                const shareId = pathMatch[1];
+                return await loadSharedConfig(shareId);
+            }
+
+            // Fall back to hash-based loading
             const hash = window.location.hash.substring(1);
             if (!hash) return false;
 
@@ -1023,6 +1423,50 @@
         }
 
         /**
+         * Load configuration from database using share ID
+         */
+        async function loadSharedConfig(shareId) {
+            try {
+                const response = await fetch(`/api/share/${shareId}`);
+
+                if (!response.ok) {
+                    console.error('Failed to load shared configuration');
+                    return false;
+                }
+
+                const data = await response.json();
+
+                if (!data.success || !data.config) {
+                    console.error('Invalid response from server');
+                    return false;
+                }
+
+                const config = data.config;
+
+                // Apply configuration to UI
+                document.getElementById('sides').value = config.sides;
+                document.getElementById('curve-factor').value = config.curveFactor;
+                document.getElementById('handle-angle').value = config.handleAngle;
+                document.getElementById('rotation').value = config.rotation;
+                document.getElementById('show-guides').checked = config.showGuides;
+
+                // Load keyframes if present
+                if (config.keyframes && config.keyframes.length > 0) {
+                    keyframes = config.keyframes;
+                    activeKeyframeIndex = 0;
+                    updateKeyframeDisplay();
+                }
+
+                console.log(`Loaded shared configuration (viewed ${data.metadata.views} times)`);
+                return true;
+
+            } catch (error) {
+                console.error('Error loading shared configuration:', error);
+                return false;
+            }
+        }
+
+        /**
          * Update URL hash with current state (without reloading page)
          */
         function updateURL() {
@@ -1036,23 +1480,82 @@
          */
         async function shareConfiguration() {
             try {
-                // Generate URL with current state
-                const hash = encodeStateToURL(true); // Include keyframes in share
-                const shareURL = window.location.origin + window.location.pathname + hash;
+                const notification = document.getElementById('share-notification');
+                notification.textContent = 'Creating share link...';
+                notification.classList.add('show');
 
-                // Copy to clipboard
-                await navigator.clipboard.writeText(shareURL);
+                // Prepare configuration data
+                const state = getCurrentState();
+                const configData = {
+                    sides: state.sides,
+                    curveFactor: state.curveFactor,
+                    handleAngle: state.handleAngle,
+                    rotation: state.rotation,
+                    showGuides: state.showGuides,
+                    keyframes: keyframes.length > 0 ? keyframes : undefined
+                };
 
-                // Show notification
-                showShareNotification();
+                // Send POST request to API
+                const response = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configData)
+                });
 
-                // Update URL in browser
-                window.location.hash = hash;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to create share link');
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to create share link');
+                }
+
+                // Copy short URL to clipboard
+                const shortURL = data.fullUrl;
+                await navigator.clipboard.writeText(shortURL);
+
+                // Show success notification
+                notification.textContent = `Short link copied! ${data.url}`;
+                notification.classList.add('show');
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+
+                console.log('Share link created:', data);
 
             } catch (error) {
-                console.error('Failed to copy to clipboard:', error);
-                // Fallback for browsers that don't support clipboard API
-                fallbackCopyToClipboard(window.location.origin + window.location.pathname + encodeStateToURL(true));
+                console.error('Failed to share configuration:', error);
+
+                // Fallback to hash-based sharing
+                const notification = document.getElementById('share-notification');
+                notification.textContent = 'Using fallback URL sharing...';
+
+                try {
+                    const hash = encodeStateToURL(true);
+                    const shareURL = window.location.origin + window.location.pathname + hash;
+                    await navigator.clipboard.writeText(shareURL);
+
+                    notification.textContent = 'Link copied! (fallback mode)';
+                    notification.classList.add('show');
+
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 2000);
+
+                    window.location.hash = hash;
+                } catch (fallbackError) {
+                    notification.textContent = 'Failed to copy link';
+                    notification.classList.add('show');
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 2000);
+                }
             }
         }
 
@@ -1104,6 +1607,101 @@
                 }
             }, 500);
         };
+
+        // ===== DOWNLOAD FUNCTIONALITY =====
+
+        /**
+         * Download current SVG as a file
+         */
+        function downloadSVG() {
+            const svgElement = document.querySelector('#svg-preview svg');
+            if (!svgElement) {
+                alert('No SVG to download');
+                return;
+            }
+
+            // Clone the SVG and ensure it has proper attributes
+            const svgClone = svgElement.cloneNode(true);
+            svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+            // Serialize the SVG
+            const svgData = new XMLSerializer().serializeToString(svgClone);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const svgUrl = URL.createObjectURL(svgBlob);
+
+            // Create download link
+            const downloadLink = document.createElement('a');
+            const state = getCurrentState();
+            const filename = `flowangle-n${state.sides}-c${state.curveFactor.toFixed(2)}-a${state.handleAngle}.svg`;
+            downloadLink.href = svgUrl;
+            downloadLink.download = filename;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(svgUrl);
+        }
+
+        /**
+         * Download current SVG as PNG
+         */
+        function downloadPNG() {
+            const svgElement = document.querySelector('#svg-preview svg');
+            if (!svgElement) {
+                alert('No SVG to download');
+                return;
+            }
+
+            // Get SVG dimensions
+            const bbox = svgElement.getBoundingClientRect();
+            const width = bbox.width || 600;
+            const height = bbox.height || 600;
+
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            const scale = 2; // 2x resolution for better quality
+            canvas.width = width * scale;
+            canvas.height = height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+
+            // Serialize SVG
+            const svgClone = svgElement.cloneNode(true);
+            svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            const svgData = new XMLSerializer().serializeToString(svgClone);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            // Create image
+            const img = new Image();
+            img.onload = function() {
+                // Draw white background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+
+                // Draw SVG
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to PNG and download
+                canvas.toBlob(function(blob) {
+                    const state = getCurrentState();
+                    const filename = `flowangle-n${state.sides}-c${state.curveFactor.toFixed(2)}-a${state.handleAngle}.png`;
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = URL.createObjectURL(blob);
+                    downloadLink.download = filename;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(url);
+                });
+            };
+
+            img.onerror = function() {
+                alert('Failed to convert SVG to PNG');
+                URL.revokeObjectURL(url);
+            };
+
+            img.src = url;
+        }
     </script>
 </body>
 </html>
