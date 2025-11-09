@@ -50,6 +50,16 @@
         }
 
         #svg-preview {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #svg-preview svg {
+            width: 100%;
+            height: 100%;
             max-width: 100%;
             max-height: 100%;
         }
@@ -286,6 +296,39 @@
             gap: 15px;
             align-items: center;
         }
+
+        /* Share notification */
+        #share-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2a2a2a;
+            color: #6cf;
+            padding: 20px 40px;
+            border-radius: 8px;
+            border: 2px solid #6cf;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 4px 20px rgba(102, 204, 255, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        #share-notification.show {
+            opacity: 1;
+        }
+
+        .share-btn {
+            background: #4a4;
+            color: #fff;
+        }
+
+        .share-btn:hover {
+            background: #6c6;
+        }
     </style>
 </head>
 <body>
@@ -342,7 +385,14 @@
             <input type="checkbox" id="show-guides" onchange="updatePreview()">
             <span style="font-size: 13px;">Show Guides</span>
         </label>
+
+        <div class="divider"></div>
+
+        <button class="share-btn" onclick="shareConfiguration()">Share Configuration</button>
     </div>
+
+    <!-- Share notification -->
+    <div id="share-notification">Link copied to clipboard!</div>
 
     <!-- Main Content -->
     <div id="main-content">
@@ -501,6 +551,7 @@
         };
 
         // Initialize
+        loadFromURL(); // Load from URL first if parameters exist
         updatePreview();
         updatePulseAnimations();
 
@@ -572,7 +623,7 @@
 
             // Special case for n=1: circle
             if (state.sides === 1) {
-                return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>
                 </svg>`;
             }
@@ -593,7 +644,7 @@
                 const cpX = midX + (perpX / perpLength) * offset;
                 const cpY = midY + (perpY / perpLength) * offset;
 
-                return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
                     <path d="M ${v1.x} ${v1.y} Q ${cpX} ${cpY}, ${v2.x} ${v2.y}" fill="none" stroke="#000080" stroke-width="2" opacity="0.8"/>
                 </svg>`;
             }
@@ -651,7 +702,7 @@
 
             shapes += `<path d="${pathData} Z" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>`;
 
-            return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
+            return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
         }
 
         function addKeyframe() {
@@ -843,6 +894,216 @@
 
             animate();
         }
+
+        // ===== URL SHARING FUNCTIONALITY =====
+
+        /**
+         * Encode current state to URL hash parameters
+         * Uses compact parameter names for shorter URLs:
+         * s=sides, c=curve, a=angle, r=rotation, g=guides
+         * kf=keyframes (base64 encoded JSON array)
+         */
+        function encodeStateToURL(includeKeyframes = false) {
+            const state = getCurrentState();
+            const params = new URLSearchParams();
+
+            // Add basic parameters with compact names
+            params.set('s', state.sides);
+            params.set('c', state.curveFactor.toFixed(3));
+            params.set('a', state.handleAngle);
+            params.set('r', state.rotation);
+            params.set('g', state.showGuides ? '1' : '0');
+
+            // Optionally encode keyframes (if any exist and requested)
+            if (includeKeyframes && keyframes.length > 0) {
+                try {
+                    // Compress keyframes data by only storing essential values
+                    const compactKeyframes = keyframes.map(kf => ({
+                        s: kf.sides,
+                        c: parseFloat(kf.curveFactor.toFixed(3)),
+                        a: kf.handleAngle,
+                        r: kf.rotation,
+                        g: kf.showGuides ? 1 : 0
+                    }));
+
+                    // Convert to JSON and then to base64
+                    const jsonStr = JSON.stringify(compactKeyframes);
+                    const base64 = btoa(jsonStr);
+                    params.set('kf', base64);
+                } catch (e) {
+                    console.warn('Failed to encode keyframes:', e);
+                }
+            }
+
+            return '#' + params.toString();
+        }
+
+        /**
+         * Decode URL hash parameters and apply to current state
+         * Handles both compact and full parameter names for backward compatibility
+         */
+        function loadFromURL() {
+            const hash = window.location.hash.substring(1);
+            if (!hash) return false;
+
+            try {
+                const params = new URLSearchParams(hash);
+                let stateLoaded = false;
+
+                // Parse basic parameters (compact names)
+                if (params.has('s')) {
+                    const sides = parseInt(params.get('s'));
+                    if (sides >= 1 && sides <= 12) {
+                        document.getElementById('sides').value = sides;
+                        stateLoaded = true;
+                    }
+                }
+
+                if (params.has('c')) {
+                    const curve = parseFloat(params.get('c'));
+                    if (!isNaN(curve)) {
+                        document.getElementById('curve-factor').value = curve;
+                        stateLoaded = true;
+                    }
+                }
+
+                if (params.has('a')) {
+                    const angle = parseFloat(params.get('a'));
+                    if (angle >= 10 && angle <= 170) {
+                        document.getElementById('handle-angle').value = angle;
+                        stateLoaded = true;
+                    }
+                }
+
+                if (params.has('r')) {
+                    const rotation = parseFloat(params.get('r'));
+                    if (!isNaN(rotation)) {
+                        document.getElementById('rotation').value = rotation % 360;
+                        stateLoaded = true;
+                    }
+                }
+
+                if (params.has('g')) {
+                    const guides = params.get('g') === '1';
+                    document.getElementById('show-guides').checked = guides;
+                    stateLoaded = true;
+                }
+
+                // Parse keyframes if present
+                if (params.has('kf')) {
+                    try {
+                        const base64 = params.get('kf');
+                        const jsonStr = atob(base64);
+                        const compactKeyframes = JSON.parse(jsonStr);
+
+                        // Expand compact keyframes to full format
+                        keyframes = compactKeyframes.map(kf => ({
+                            sides: kf.s,
+                            curveFactor: kf.c,
+                            handleAngle: kf.a,
+                            rotation: kf.r,
+                            showGuides: kf.g === 1
+                        }));
+
+                        if (keyframes.length > 0) {
+                            activeKeyframeIndex = 0;
+                            updateKeyframeDisplay();
+                            stateLoaded = true;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to decode keyframes:', e);
+                    }
+                }
+
+                return stateLoaded;
+            } catch (e) {
+                console.error('Failed to parse URL parameters:', e);
+                return false;
+            }
+        }
+
+        /**
+         * Update URL hash with current state (without reloading page)
+         */
+        function updateURL() {
+            const hash = encodeStateToURL(false);
+            history.replaceState(null, '', hash);
+        }
+
+        /**
+         * Share current configuration
+         * Copies full URL with parameters to clipboard and shows notification
+         */
+        async function shareConfiguration() {
+            try {
+                // Generate URL with current state
+                const hash = encodeStateToURL(true); // Include keyframes in share
+                const shareURL = window.location.origin + window.location.pathname + hash;
+
+                // Copy to clipboard
+                await navigator.clipboard.writeText(shareURL);
+
+                // Show notification
+                showShareNotification();
+
+                // Update URL in browser
+                window.location.hash = hash;
+
+            } catch (error) {
+                console.error('Failed to copy to clipboard:', error);
+                // Fallback for browsers that don't support clipboard API
+                fallbackCopyToClipboard(window.location.origin + window.location.pathname + encodeStateToURL(true));
+            }
+        }
+
+        /**
+         * Show the "Link copied!" notification with fade in/out animation
+         */
+        function showShareNotification() {
+            const notification = document.getElementById('share-notification');
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
+        /**
+         * Fallback copy method for browsers without clipboard API
+         */
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                showShareNotification();
+            } catch (err) {
+                alert('Failed to copy link. Please copy manually:\n\n' + text);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Auto-update URL when controls change (debounced)
+        let urlUpdateTimeout = null;
+        const originalUpdatePreview = updatePreview;
+
+        updatePreview = function() {
+            originalUpdatePreview();
+
+            // Debounce URL updates to avoid excessive history entries
+            clearTimeout(urlUpdateTimeout);
+            urlUpdateTimeout = setTimeout(() => {
+                if (!isPlaying) { // Don't update URL during animation playback
+                    updateURL();
+                }
+            }, 500);
+        };
     </script>
 </body>
 </html>
