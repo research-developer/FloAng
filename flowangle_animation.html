@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowAngle Animation Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Controls Panel */
+        #controls-panel {
+            background: #1a1a1a;
+            border-bottom: 2px solid #333;
+            padding: 15px 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Main Content Area */
+        #main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Canvas Area - 100% of available space */
+        #canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #151515;
+            position: relative;
+        }
+
+        #svg-preview {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Timeline at bottom */
+        #timeline {
+            height: 180px;
+            background: #1a1a1a;
+            border-top: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #timeline-header {
+            padding: 10px 20px;
+            background: #222;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #keyframes-container {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px;
+            overflow-x: auto;
+            align-items: center;
+        }
+
+        .keyframe {
+            min-width: 120px;
+            height: 120px;
+            background: #242424;
+            border: 2px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .keyframe:hover {
+            border-color: #6cf;
+            transform: scale(1.05);
+        }
+
+        .keyframe.active {
+            border-color: #6cf;
+            box-shadow: 0 0 20px rgba(102, 204, 255, 0.3);
+        }
+
+        .keyframe-thumbnail {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .keyframe-thumbnail svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .keyframe-label {
+            padding: 5px;
+            text-align: center;
+            font-size: 11px;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+        }
+
+        .add-keyframe-btn {
+            min-width: 120px;
+            height: 120px;
+            background: #2a2a2a;
+            border: 2px dashed #555;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .add-keyframe-btn:hover {
+            border-color: #6cf;
+            color: #6cf;
+        }
+
+        /* Control Groups */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .control-value {
+            font-size: 14px;
+            color: #6cf;
+            font-family: 'Monaco', monospace;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #6cf;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #6cf;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #6cf;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #8df;
+            transform: translateY(-1px);
+        }
+
+        .preset-btn {
+            padding: 6px 12px;
+            background: #2a2a2a;
+            color: #6cf;
+            border: 1px solid #333;
+        }
+
+        .preset-btn:hover {
+            background: #333;
+        }
+
+        /* Pulse Controls */
+        #pulse-controls {
+            padding: 10px 20px;
+            background: #222;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            border-top: 1px solid #333;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #6cf;
+        }
+
+        select {
+            padding: 6px 12px;
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .divider {
+            width: 1px;
+            height: 30px;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Controls -->
+    <div id="controls-panel">
+        <h1 style="color: #6cf; font-size: 18px; margin: 0;">🌊 FlowAngle Studio</h1>
+
+        <div class="divider"></div>
+
+        <!-- Presets -->
+        <button class="preset-btn" onclick="loadPreset('triquetra')">Triquetra</button>
+        <button class="preset-btn" onclick="loadPreset('flower')">Flower</button>
+        <button class="preset-btn" onclick="loadPreset('star')">Star</button>
+        <button class="preset-btn" onclick="loadPreset('smooth')">Smooth</button>
+
+        <div class="divider"></div>
+
+        <!-- Main Controls -->
+        <div class="control-group">
+            <label class="control-label">Sides (n)</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="sides" min="1" max="12" value="3" oninput="updatePreview()">
+                <span class="control-value" id="sides-value">3</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Curve Factor</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="curve-factor" min="-3" max="1" step="0.01" value="-0.66" oninput="updatePreview()">
+                <span class="control-value" id="curve-value">-0.66</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Handle Angle</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="handle-angle" min="10" max="170" value="60" oninput="updatePreview()">
+                <span class="control-value" id="handle-angle-value">60°</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Rotation</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="rotation" min="0" max="360" value="0" oninput="updatePreview()">
+                <span class="control-value" id="rotation-value">0°</span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="show-guides" onchange="updatePreview()">
+            <span style="font-size: 13px;">Show Guides</span>
+        </label>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <div id="canvas-area">
+            <div id="svg-preview"></div>
+        </div>
+    </div>
+
+    <!-- Pulse Animation Controls -->
+    <div id="pulse-controls">
+        <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="pulse-enabled" onchange="togglePulse()">
+            <span>Pulse Mode</span>
+        </label>
+
+        <div class="control-group">
+            <label class="control-label">Target</label>
+            <select id="pulse-target">
+                <option value="curve">Curve Factor</option>
+                <option value="angle">Handle Angle</option>
+                <option value="rotation">Rotation</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Range (±)</label>
+            <input type="range" id="pulse-range" min="0.1" max="2" step="0.1" value="0.5">
+            <span class="control-value" id="pulse-range-value">0.5</span>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Speed</label>
+            <input type="range" id="pulse-speed" min="0.5" max="5" step="0.1" value="2">
+            <span class="control-value" id="pulse-speed-value">2x</span>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Easing</label>
+            <select id="pulse-easing">
+                <option value="linear">Linear</option>
+                <option value="easeInOut">Ease In-Out</option>
+                <option value="easeIn">Ease In</option>
+                <option value="easeOut">Ease Out</option>
+                <option value="bounce">Bounce</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div id="timeline">
+        <div id="timeline-header">
+            <span style="font-weight: bold; color: #6cf;">Keyframes</span>
+            <button onclick="addKeyframe()">+ Add Keyframe</button>
+        </div>
+        <div id="keyframes-container">
+            <!-- Keyframes will be added here -->
+        </div>
+    </div>
+
+    <script>
+        // State
+        let keyframes = [];
+        let activeKeyframeIndex = -1;
+        let pulseAnimation = null;
+        let pulseStartTime = 0;
+
+        // Easing functions
+        const easingFunctions = {
+            linear: t => t,
+            easeInOut: t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
+            easeIn: t => t * t,
+            easeOut: t => 1 - (1 - t) * (1 - t),
+            bounce: t => {
+                const n1 = 7.5625;
+                const d1 = 2.75;
+                if (t < 1 / d1) return n1 * t * t;
+                if (t < 2 / d1) return n1 * (t -= 1.5 / d1) * t + 0.75;
+                if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375;
+                return n1 * (t -= 2.625 / d1) * t + 0.984375;
+            }
+        };
+
+        // Initialize
+        updatePreview();
+
+        function getCurrentState() {
+            return {
+                sides: parseInt(document.getElementById('sides').value),
+                curveFactor: parseFloat(document.getElementById('curve-factor').value),
+                handleAngle: parseFloat(document.getElementById('handle-angle').value),
+                rotation: parseFloat(document.getElementById('rotation').value),
+                showGuides: document.getElementById('show-guides').checked
+            };
+        }
+
+        function applyState(state) {
+            document.getElementById('sides').value = state.sides;
+            document.getElementById('curve-factor').value = state.curveFactor;
+            document.getElementById('handle-angle').value = state.handleAngle;
+            document.getElementById('rotation').value = state.rotation;
+            document.getElementById('show-guides').checked = state.showGuides;
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const state = getCurrentState();
+
+            // Update value displays
+            document.getElementById('sides-value').textContent = state.sides;
+            document.getElementById('curve-value').textContent = state.curveFactor.toFixed(2);
+            document.getElementById('handle-angle-value').textContent = state.handleAngle + '°';
+            document.getElementById('rotation-value').textContent = state.rotation + '°';
+            document.getElementById('pulse-range-value').textContent = document.getElementById('pulse-range').value;
+            document.getElementById('pulse-speed-value').textContent = document.getElementById('pulse-speed').value + 'x';
+
+            // Generate SVG
+            const svg = generateFlowAngle(state);
+            document.getElementById('svg-preview').innerHTML = svg;
+
+            // Update active keyframe if exists
+            if (activeKeyframeIndex >= 0) {
+                keyframes[activeKeyframeIndex] = state;
+                updateKeyframeDisplay();
+            }
+        }
+
+        function generateFlowAngle(state, size = 400) {
+            const center = { x: size / 2, y: size / 2 };
+            const radius = size * 0.35;
+            const vertices = [];
+            const angleStep = (2 * Math.PI) / state.sides;
+            const rotRad = (state.rotation * Math.PI) / 180;
+
+            // Calculate vertices
+            for (let i = 0; i < state.sides; i++) {
+                const angle = rotRad + i * angleStep;
+                vertices.push({
+                    x: center.x + radius * Math.cos(angle),
+                    y: center.y + radius * Math.sin(angle)
+                });
+            }
+
+            // Special case for n=1: circle
+            if (state.sides === 1) {
+                return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                </svg>`;
+            }
+
+            // Special case for n=2: curved line
+            if (state.sides === 2) {
+                const v1 = vertices[0];
+                const v2 = vertices[1];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const perpX = dy;
+                const perpY = -dx;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const offset = (baseLength / 2) * state.curveFactor;
+                const cpX = midX + (perpX / perpLength) * offset;
+                const cpY = midY + (perpY / perpLength) * offset;
+
+                return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M ${v1.x} ${v1.y} Q ${cpX} ${cpY}, ${v2.x} ${v2.y}" fill="none" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                </svg>`;
+            }
+
+            // Build triangles
+            const triangles = [];
+            const apexAngle = (state.handleAngle * Math.PI) / 180;
+
+            for (let i = 0; i < state.sides; i++) {
+                const v1 = vertices[i];
+                const v2 = vertices[(i + 1) % state.sides];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpX = dy;
+                const perpY = -dx;
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const height = (baseLength / 2) / Math.tan(apexAngle / 2);
+                const thirdX = midX + (perpX / perpLength) * height;
+                const thirdY = midY + (perpY / perpLength) * height;
+
+                triangles.push({ v1, v2, third: { x: thirdX, y: thirdY } });
+            }
+
+            // Build path
+            let shapes = '';
+
+            if (state.showGuides) {
+                triangles.forEach(tri => {
+                    shapes += `<polygon points="${tri.v1.x},${tri.v1.y} ${tri.v2.x},${tri.v2.y} ${tri.third.x},${tri.third.y}" fill="none" stroke="#6cf" stroke-width="1" stroke-dasharray="3,3" opacity="0.3"/>`;
+                });
+            }
+
+            let pathData = `M ${vertices[0].x} ${vertices[0].y}`;
+
+            for (let i = 0; i < state.sides; i++) {
+                const tri = triangles[i];
+                const nextVertex = vertices[(i + 1) % state.sides];
+                const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.curveFactor;
+                const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.curveFactor;
+                const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.curveFactor;
+                const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.curveFactor;
+
+                pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${nextVertex.x} ${nextVertex.y}`;
+
+                if (state.showGuides) {
+                    shapes += `<circle cx="${cp1x}" cy="${cp1y}" r="2" fill="#f66" opacity="0.6"/>`;
+                    shapes += `<circle cx="${cp2x}" cy="${cp2y}" r="2" fill="#6f6" opacity="0.6"/>`;
+                    shapes += `<line x1="${tri.v1.x}" y1="${tri.v1.y}" x2="${cp1x}" y2="${cp1y}" stroke="#f66" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
+                    shapes += `<line x1="${tri.v2.x}" y1="${tri.v2.y}" x2="${cp2x}" y2="${cp2y}" stroke="#6f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
+                }
+            }
+
+            shapes += `<path d="${pathData} Z" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>`;
+
+            return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
+        }
+
+        function addKeyframe() {
+            const state = getCurrentState();
+            keyframes.push(state);
+            activeKeyframeIndex = keyframes.length - 1;
+            updateKeyframeDisplay();
+        }
+
+        function updateKeyframeDisplay() {
+            const container = document.getElementById('keyframes-container');
+            container.innerHTML = '';
+
+            keyframes.forEach((kf, index) => {
+                const div = document.createElement('div');
+                div.className = 'keyframe' + (index === activeKeyframeIndex ? ' active' : '');
+                div.onclick = () => selectKeyframe(index);
+
+                const thumbnail = document.createElement('div');
+                thumbnail.className = 'keyframe-thumbnail';
+                thumbnail.innerHTML = generateFlowAngle(kf, 100);
+
+                const label = document.createElement('div');
+                label.className = 'keyframe-label';
+                label.textContent = `Frame ${index + 1}`;
+
+                div.appendChild(thumbnail);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+
+        function selectKeyframe(index) {
+            activeKeyframeIndex = index;
+            applyState(keyframes[index]);
+            updateKeyframeDisplay();
+        }
+
+        function loadPreset(name) {
+            const presets = {
+                triquetra: { sides: 3, curveFactor: -0.66, handleAngle: 60, rotation: 0 },
+                flower: { sides: 6, curveFactor: -0.8, handleAngle: 30, rotation: 0 },
+                star: { sides: 5, curveFactor: -1.2, handleAngle: 36, rotation: 18 },
+                smooth: { sides: 8, curveFactor: -0.5, handleAngle: 22.5, rotation: 0 }
+            };
+
+            const preset = presets[name];
+            if (preset) {
+                document.getElementById('sides').value = preset.sides;
+                document.getElementById('curve-factor').value = preset.curveFactor;
+                document.getElementById('handle-angle').value = preset.handleAngle;
+                document.getElementById('rotation').value = preset.rotation;
+                updatePreview();
+            }
+        }
+
+        function togglePulse() {
+            const enabled = document.getElementById('pulse-enabled').checked;
+
+            if (enabled) {
+                pulseStartTime = Date.now();
+                startPulse();
+            } else {
+                if (pulseAnimation) {
+                    cancelAnimationFrame(pulseAnimation);
+                    pulseAnimation = null;
+                }
+            }
+        }
+
+        function startPulse() {
+            const target = document.getElementById('pulse-target').value;
+            const range = parseFloat(document.getElementById('pulse-range').value);
+            const speed = parseFloat(document.getElementById('pulse-speed').value);
+            const easingName = document.getElementById('pulse-easing').value;
+            const easing = easingFunctions[easingName];
+
+            const baseState = {
+                curve: parseFloat(document.getElementById('curve-factor').value),
+                angle: parseFloat(document.getElementById('handle-angle').value),
+                rotation: parseFloat(document.getElementById('rotation').value)
+            };
+
+            function animate() {
+                const elapsed = (Date.now() - pulseStartTime) / 1000;
+                const cycle = (elapsed * speed) % 2;
+                const t = cycle < 1 ? cycle : 2 - cycle;
+                const easedT = easing(t);
+
+                const oscillation = (easedT - 0.5) * 2 * range;
+
+                if (target === 'curve') {
+                    document.getElementById('curve-factor').value = baseState.curve + oscillation;
+                } else if (target === 'angle') {
+                    document.getElementById('handle-angle').value = baseState.angle + oscillation * 20;
+                } else if (target === 'rotation') {
+                    document.getElementById('rotation').value = (baseState.rotation + oscillation * 180) % 360;
+                }
+
+                updatePreview();
+
+                if (document.getElementById('pulse-enabled').checked) {
+                    pulseAnimation = requestAnimationFrame(animate);
+                }
+            }
+
+            animate();
+        }
+    </script>
+</body>
+</html>
