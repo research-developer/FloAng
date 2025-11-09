@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polar Interpolation Morphing Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        #header {
+            background: #1a1a1a;
+            border-bottom: 2px solid #333;
+            padding: 15px 20px;
+        }
+
+        h1 {
+            color: #6cf;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 13px;
+        }
+
+        /* Main Layout */
+        #main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        .preview-panel {
+            background: #151515;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            background: #222;
+            padding: 10px 15px;
+            border-bottom: 1px solid #333;
+            font-weight: bold;
+            color: #6cf;
+            font-size: 14px;
+        }
+
+        .svg-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .svg-container svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Controls Panel */
+        #controls {
+            background: #1a1a1a;
+            border-top: 2px solid #333;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+
+        .control-section h3 {
+            color: #6cf;
+            font-size: 14px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .control-value {
+            font-size: 14px;
+            color: #6cf;
+            font-family: 'Monaco', monospace;
+            margin-left: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #6cf;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #6cf;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 6px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #6cf;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        button:hover {
+            background: #8df;
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: #4a4;
+        }
+
+        button.secondary:hover {
+            background: #6c6;
+        }
+
+        button.danger {
+            background: #c44;
+        }
+
+        button.danger:hover {
+            background: #e66;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #6cf;
+            margin-right: 8px;
+        }
+
+        /* Stats Display */
+        .stats {
+            background: #1a1a1a;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .stats-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .stats-value {
+            color: #6cf;
+            font-family: 'Monaco', monospace;
+        }
+
+        /* Animation indicator */
+        .animating {
+            position: relative;
+        }
+
+        .animating::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6cf, #8df, #6cf);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div id="header">
+        <h1>Polar Interpolation Morphing Test</h1>
+        <div class="subtitle">Optimized for FlowAngle's radially symmetric shapes</div>
+    </div>
+
+    <!-- Main Content - Three Panels -->
+    <div id="main-content">
+        <!-- Source Shape -->
+        <div class="preview-panel">
+            <div class="panel-header">Source Shape (n=<span id="source-n-display">3</span>)</div>
+            <div class="svg-container" id="source-preview"></div>
+        </div>
+
+        <!-- Morphed Shape -->
+        <div class="preview-panel" id="morph-panel">
+            <div class="panel-header">Morphed Shape (Progress: <span id="morph-progress-display">50</span>%)</div>
+            <div class="svg-container" id="morph-preview"></div>
+        </div>
+
+        <!-- Target Shape -->
+        <div class="preview-panel">
+            <div class="panel-header">Target Shape (n=<span id="target-n-display">6</span>)</div>
+            <div class="svg-container" id="target-preview"></div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+        <!-- Source Controls -->
+        <div class="control-section">
+            <h3>Source Shape</h3>
+            <div class="control-group">
+                <label class="control-label">Sides (n)</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="source-n" min="1" max="12" value="3" oninput="updateSource()">
+                    <span class="control-value" id="source-n-value">3</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Curve Factor</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="source-curve" min="-3" max="1" step="0.01" value="-0.66" oninput="updateSource()">
+                    <span class="control-value" id="source-curve-value">-0.66</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Handle Angle</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="source-angle" min="10" max="170" value="60" oninput="updateSource()">
+                    <span class="control-value" id="source-angle-value">60°</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Rotation</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="source-rotation" min="0" max="360" value="0" oninput="updateSource()">
+                    <span class="control-value" id="source-rotation-value">0°</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Target Controls -->
+        <div class="control-section">
+            <h3>Target Shape</h3>
+            <div class="control-group">
+                <label class="control-label">Sides (n)</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="target-n" min="1" max="12" value="6" oninput="updateTarget()">
+                    <span class="control-value" id="target-n-value">6</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Curve Factor</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="target-curve" min="-3" max="1" step="0.01" value="-0.8" oninput="updateTarget()">
+                    <span class="control-value" id="target-curve-value">-0.8</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Handle Angle</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="target-angle" min="10" max="170" value="30" oninput="updateTarget()">
+                    <span class="control-value" id="target-angle-value">30°</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Rotation</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="target-rotation" min="0" max="360" value="0" oninput="updateTarget()">
+                    <span class="control-value" id="target-rotation-value">0°</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Morphing Controls -->
+        <div class="control-section">
+            <h3>Morphing Controls</h3>
+            <div class="control-group">
+                <label class="control-label">Morph Progress</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="morph-progress" min="0" max="100" value="50" oninput="updateMorph()">
+                    <span class="control-value" id="morph-progress-value">50%</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Sample Resolution (degrees)</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="sample-resolution" min="0.1" max="10" step="0.1" value="1" oninput="updateMorph()">
+                    <span class="control-value" id="sample-resolution-value">1.0°</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="show-guides" onchange="updateMorph()">
+                    <span>Show Debug Guides</span>
+                </label>
+            </div>
+            <button class="secondary" onclick="toggleAnimation()">Animate Morph</button>
+            <button onclick="resetMorph()">Reset to 50%</button>
+
+            <div class="stats">
+                <div class="stats-row">
+                    <span>Sample Points:</span>
+                    <span class="stats-value" id="stat-samples">360</span>
+                </div>
+                <div class="stats-row">
+                    <span>Morph Time:</span>
+                    <span class="stats-value" id="stat-time">0ms</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Presets -->
+        <div class="control-section">
+            <h3>Test Presets</h3>
+            <button onclick="loadPreset('triquetra-to-flower')">Triquetra → Flower</button>
+            <button onclick="loadPreset('triangle-to-dodecagon')">Triangle → Dodecagon</button>
+            <button onclick="loadPreset('extreme-curve')">Extreme Curve Test</button>
+            <button onclick="loadPreset('rotation-test')">Rotation Test</button>
+        </div>
+    </div>
+
+    <script>
+        // ===== STATE =====
+        let sourceState = {
+            sides: 3,
+            curveFactor: -0.66,
+            handleAngle: 60,
+            rotation: 0
+        };
+
+        let targetState = {
+            sides: 6,
+            curveFactor: -0.8,
+            handleAngle: 30,
+            rotation: 0
+        };
+
+        let morphProgress = 0.5;
+        let sampleResolution = 1.0; // degrees
+        let showGuides = false;
+        let isAnimating = false;
+        let animationFrame = null;
+
+        // ===== FLOWANGLE GENERATOR =====
+
+        /**
+         * Generate FlowAngle SVG from parameters
+         * This is the core FlowAngle algorithm from the original implementation
+         */
+        function generateFlowAngle(state, size = 400) {
+            const center = { x: size / 2, y: size / 2 };
+            const radius = size * 0.30;
+            const vertices = [];
+            const angleStep = (2 * Math.PI) / state.sides;
+            const rotRad = (state.rotation * Math.PI) / 180;
+
+            // Calculate vertices
+            for (let i = 0; i < state.sides; i++) {
+                const angle = rotRad + i * angleStep;
+                vertices.push({
+                    x: center.x + radius * Math.cos(angle),
+                    y: center.y + radius * Math.sin(angle)
+                });
+            }
+
+            // Special case for n=1: circle
+            if (state.sides === 1) {
+                return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="none" stroke="#6cf" stroke-width="2"/>
+                </svg>`;
+            }
+
+            // Special case for n=2: curved line
+            if (state.sides === 2) {
+                const v1 = vertices[0];
+                const v2 = vertices[1];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const perpX = dy;
+                const perpY = -dx;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const offset = (baseLength / 2) * state.curveFactor;
+                const cpX = midX + (perpX / perpLength) * offset;
+                const cpY = midY + (perpY / perpLength) * offset;
+
+                return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M ${v1.x} ${v1.y} Q ${cpX} ${cpY}, ${v2.x} ${v2.y}" fill="none" stroke="#6cf" stroke-width="2"/>
+                </svg>`;
+            }
+
+            // Build triangles
+            const triangles = [];
+            const apexAngle = (state.handleAngle * Math.PI) / 180;
+
+            for (let i = 0; i < state.sides; i++) {
+                const v1 = vertices[i];
+                const v2 = vertices[(i + 1) % state.sides];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpX = dy;
+                const perpY = -dx;
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const height = (baseLength / 2) / Math.tan(apexAngle / 2);
+                const thirdX = midX + (perpX / perpLength) * height;
+                const thirdY = midY + (perpY / perpLength) * height;
+
+                triangles.push({ v1, v2, third: { x: thirdX, y: thirdY } });
+            }
+
+            // Build path
+            let pathData = `M ${vertices[0].x} ${vertices[0].y}`;
+
+            for (let i = 0; i < state.sides; i++) {
+                const tri = triangles[i];
+                const nextVertex = vertices[(i + 1) % state.sides];
+                const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.curveFactor;
+                const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.curveFactor;
+                const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.curveFactor;
+                const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.curveFactor;
+
+                pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${nextVertex.x} ${nextVertex.y}`;
+            }
+
+            return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                <path d="${pathData} Z" fill="none" stroke="#6cf" stroke-width="2"/>
+            </svg>`;
+        }
+
+        // ===== POLAR MORPHING ALGORITHM =====
+
+        /**
+         * Sample a FlowAngle shape at regular angular intervals to get polar coordinates
+         * Returns array of {angle, radius} objects
+         */
+        function sampleShapePolar(state, resolution = 1.0, size = 400) {
+            const center = { x: size / 2, y: size / 2 };
+            const samples = [];
+
+            // Generate the full SVG path
+            const svg = generateFlowAngle(state, size);
+
+            // Create temporary SVG element to get path
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svg, 'image/svg+xml');
+            const pathElement = doc.querySelector('path, circle');
+
+            if (!pathElement) return samples;
+
+            // For circles, we can calculate directly
+            if (pathElement.tagName === 'circle') {
+                const r = parseFloat(pathElement.getAttribute('r'));
+                for (let angle = 0; angle < 360; angle += resolution) {
+                    samples.push({ angle, radius: r });
+                }
+                return samples;
+            }
+
+            // For paths, sample using SVG path API
+            const path = pathElement;
+            const totalLength = path.getTotalLength();
+
+            // Sample points along the path
+            const numSamples = Math.ceil(360 / resolution);
+            const pathPoints = [];
+
+            for (let i = 0; i <= numSamples; i++) {
+                const t = i / numSamples;
+                const point = path.getPointAtLength(t * totalLength);
+                pathPoints.push({ x: point.x, y: point.y });
+            }
+
+            // Convert to polar coordinates
+            for (let angle = 0; angle < 360; angle += resolution) {
+                const angleRad = (angle * Math.PI) / 180;
+
+                // Cast ray from center in this direction
+                const rayEnd = {
+                    x: center.x + 1000 * Math.cos(angleRad),
+                    y: center.y + 1000 * Math.sin(angleRad)
+                };
+
+                // Find intersection with path
+                let maxRadius = 0;
+
+                for (let i = 0; i < pathPoints.length; i++) {
+                    const p1 = pathPoints[i];
+                    const p2 = pathPoints[(i + 1) % pathPoints.length];
+
+                    const intersection = lineIntersection(
+                        center, rayEnd,
+                        p1, p2
+                    );
+
+                    if (intersection) {
+                        const dx = intersection.x - center.x;
+                        const dy = intersection.y - center.y;
+                        const r = Math.sqrt(dx * dx + dy * dy);
+
+                        // Check if this intersection is in the right direction
+                        const intersectionAngle = Math.atan2(dy, dx);
+                        const angleDiff = Math.abs(intersectionAngle - angleRad);
+
+                        if (angleDiff < 0.1 && r > maxRadius) {
+                            maxRadius = r;
+                        }
+                    }
+                }
+
+                samples.push({ angle, radius: maxRadius });
+            }
+
+            return samples;
+        }
+
+        /**
+         * Line-line intersection helper
+         */
+        function lineIntersection(p1, p2, p3, p4) {
+            const x1 = p1.x, y1 = p1.y;
+            const x2 = p2.x, y2 = p2.y;
+            const x3 = p3.x, y3 = p3.y;
+            const x4 = p4.x, y4 = p4.y;
+
+            const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+            if (Math.abs(denom) < 0.0001) return null;
+
+            const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+            const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+
+            if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+                return {
+                    x: x1 + t * (x2 - x1),
+                    y: y1 + t * (y2 - y1)
+                };
+            }
+
+            return null;
+        }
+
+        /**
+         * Interpolate between two polar sample sets
+         */
+        function interpolatePolarSamples(sourceSamples, targetSamples, t) {
+            const interpolated = [];
+
+            // Ensure both sample sets have the same angular resolution
+            const angles = new Set();
+            sourceSamples.forEach(s => angles.add(s.angle));
+            targetSamples.forEach(s => angles.add(s.angle));
+
+            const sortedAngles = Array.from(angles).sort((a, b) => a - b);
+
+            for (const angle of sortedAngles) {
+                // Find radius in source (interpolate if needed)
+                const sourceRadius = getRadiusAtAngle(sourceSamples, angle);
+                const targetRadius = getRadiusAtAngle(targetSamples, angle);
+
+                // Linear interpolation
+                const radius = sourceRadius + (targetRadius - sourceRadius) * t;
+
+                interpolated.push({ angle, radius });
+            }
+
+            return interpolated;
+        }
+
+        /**
+         * Get radius at specific angle from samples (with interpolation)
+         */
+        function getRadiusAtAngle(samples, targetAngle) {
+            // Find nearest samples
+            let before = null, after = null;
+
+            for (let i = 0; i < samples.length; i++) {
+                if (samples[i].angle <= targetAngle) {
+                    before = samples[i];
+                }
+                if (samples[i].angle >= targetAngle && !after) {
+                    after = samples[i];
+                    break;
+                }
+            }
+
+            if (!before) before = samples[samples.length - 1];
+            if (!after) after = samples[0];
+
+            if (before.angle === after.angle) return before.radius;
+
+            // Linear interpolation
+            const t = (targetAngle - before.angle) / (after.angle - before.angle);
+            return before.radius + (after.radius - before.radius) * t;
+        }
+
+        /**
+         * Generate SVG from polar samples
+         */
+        function generateSVGFromPolarSamples(samples, size = 400, showDebug = false) {
+            if (samples.length === 0) return '';
+
+            const center = { x: size / 2, y: size / 2 };
+            let shapes = '';
+
+            // Convert polar to cartesian
+            const points = samples.map(s => {
+                const angleRad = (s.angle * Math.PI) / 180;
+                return {
+                    x: center.x + s.radius * Math.cos(angleRad),
+                    y: center.y + s.radius * Math.sin(angleRad)
+                };
+            });
+
+            // Debug: Show sample points
+            if (showDebug) {
+                points.forEach((p, i) => {
+                    shapes += `<circle cx="${p.x}" cy="${p.y}" r="2" fill="#f66" opacity="0.5"/>`;
+                    if (i % 30 === 0) {
+                        shapes += `<line x1="${center.x}" y1="${center.y}" x2="${p.x}" y2="${p.y}" stroke="#6cf" stroke-width="1" opacity="0.2" stroke-dasharray="2,2"/>`;
+                    }
+                });
+            }
+
+            // Build smooth path
+            let pathData = `M ${points[0].x} ${points[0].y}`;
+
+            // Use simple line interpolation (can be enhanced with Bezier fitting)
+            for (let i = 1; i < points.length; i++) {
+                pathData += ` L ${points[i].x} ${points[i].y}`;
+            }
+
+            pathData += ' Z';
+
+            shapes += `<path d="${pathData}" fill="none" stroke="#6cf" stroke-width="2"/>`;
+
+            return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
+        }
+
+        // ===== UPDATE FUNCTIONS =====
+
+        function updateSource() {
+            sourceState = {
+                sides: parseInt(document.getElementById('source-n').value),
+                curveFactor: parseFloat(document.getElementById('source-curve').value),
+                handleAngle: parseFloat(document.getElementById('source-angle').value),
+                rotation: parseFloat(document.getElementById('source-rotation').value)
+            };
+
+            // Update displays
+            document.getElementById('source-n-value').textContent = sourceState.sides;
+            document.getElementById('source-n-display').textContent = sourceState.sides;
+            document.getElementById('source-curve-value').textContent = sourceState.curveFactor.toFixed(2);
+            document.getElementById('source-angle-value').textContent = sourceState.handleAngle + '°';
+            document.getElementById('source-rotation-value').textContent = sourceState.rotation + '°';
+
+            // Render
+            document.getElementById('source-preview').innerHTML = generateFlowAngle(sourceState);
+
+            updateMorph();
+        }
+
+        function updateTarget() {
+            targetState = {
+                sides: parseInt(document.getElementById('target-n').value),
+                curveFactor: parseFloat(document.getElementById('target-curve').value),
+                handleAngle: parseFloat(document.getElementById('target-angle').value),
+                rotation: parseFloat(document.getElementById('target-rotation').value)
+            };
+
+            // Update displays
+            document.getElementById('target-n-value').textContent = targetState.sides;
+            document.getElementById('target-n-display').textContent = targetState.sides;
+            document.getElementById('target-curve-value').textContent = targetState.curveFactor.toFixed(2);
+            document.getElementById('target-angle-value').textContent = targetState.handleAngle + '°';
+            document.getElementById('target-rotation-value').textContent = targetState.rotation + '°';
+
+            // Render
+            document.getElementById('target-preview').innerHTML = generateFlowAngle(targetState);
+
+            updateMorph();
+        }
+
+        function updateMorph() {
+            const startTime = performance.now();
+
+            morphProgress = parseFloat(document.getElementById('morph-progress').value) / 100;
+            sampleResolution = parseFloat(document.getElementById('sample-resolution').value);
+            showGuides = document.getElementById('show-guides').checked;
+
+            // Update displays
+            document.getElementById('morph-progress-value').textContent = Math.round(morphProgress * 100) + '%';
+            document.getElementById('morph-progress-display').textContent = Math.round(morphProgress * 100);
+            document.getElementById('sample-resolution-value').textContent = sampleResolution.toFixed(1) + '°';
+
+            // Sample both shapes
+            const sourceSamples = sampleShapePolar(sourceState, sampleResolution);
+            const targetSamples = sampleShapePolar(targetState, sampleResolution);
+
+            // Interpolate
+            const morphedSamples = interpolatePolarSamples(sourceSamples, targetSamples, morphProgress);
+
+            // Generate SVG
+            const morphedSVG = generateSVGFromPolarSamples(morphedSamples, 400, showGuides);
+            document.getElementById('morph-preview').innerHTML = morphedSVG;
+
+            // Update stats
+            const endTime = performance.now();
+            document.getElementById('stat-samples').textContent = morphedSamples.length;
+            document.getElementById('stat-time').textContent = (endTime - startTime).toFixed(2) + 'ms';
+        }
+
+        function resetMorph() {
+            document.getElementById('morph-progress').value = 50;
+            updateMorph();
+        }
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            const btn = event.target;
+
+            if (isAnimating) {
+                btn.textContent = 'Stop Animation';
+                btn.classList.add('danger');
+                btn.classList.remove('secondary');
+                document.getElementById('morph-panel').classList.add('animating');
+                animate();
+            } else {
+                btn.textContent = 'Animate Morph';
+                btn.classList.remove('danger');
+                btn.classList.add('secondary');
+                document.getElementById('morph-panel').classList.remove('animating');
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+
+            // Oscillate between 0 and 100
+            const progress = (Math.sin(Date.now() / 1000) + 1) / 2 * 100;
+            document.getElementById('morph-progress').value = progress;
+            updateMorph();
+
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        function loadPreset(name) {
+            const presets = {
+                'triquetra-to-flower': {
+                    source: { sides: 3, curveFactor: -0.66, handleAngle: 60, rotation: 0 },
+                    target: { sides: 6, curveFactor: -0.8, handleAngle: 30, rotation: 0 }
+                },
+                'triangle-to-dodecagon': {
+                    source: { sides: 3, curveFactor: -0.5, handleAngle: 60, rotation: 0 },
+                    target: { sides: 12, curveFactor: -0.5, handleAngle: 15, rotation: 0 }
+                },
+                'extreme-curve': {
+                    source: { sides: 5, curveFactor: -2.5, handleAngle: 36, rotation: 0 },
+                    target: { sides: 7, curveFactor: 0.8, handleAngle: 51, rotation: 0 }
+                },
+                'rotation-test': {
+                    source: { sides: 4, curveFactor: -0.7, handleAngle: 45, rotation: 0 },
+                    target: { sides: 4, curveFactor: -0.7, handleAngle: 45, rotation: 180 }
+                }
+            };
+
+            const preset = presets[name];
+            if (!preset) return;
+
+            // Apply source
+            document.getElementById('source-n').value = preset.source.sides;
+            document.getElementById('source-curve').value = preset.source.curveFactor;
+            document.getElementById('source-angle').value = preset.source.handleAngle;
+            document.getElementById('source-rotation').value = preset.source.rotation;
+            updateSource();
+
+            // Apply target
+            document.getElementById('target-n').value = preset.target.sides;
+            document.getElementById('target-curve').value = preset.target.curveFactor;
+            document.getElementById('target-angle').value = preset.target.handleAngle;
+            document.getElementById('target-rotation').value = preset.target.rotation;
+            updateTarget();
+        }
+
+        // Initialize
+        updateSource();
+        updateTarget();
+    </script>
+</body>
+</html>

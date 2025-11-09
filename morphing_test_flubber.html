@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowAngle Morphing - Flubber Implementation</title>
+
+    <!-- Load Flubber library from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/flubber@0.4.2/build/flubber.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        #header {
+            background: #1a1a1a;
+            border-bottom: 2px solid #333;
+            padding: 15px 20px;
+        }
+
+        #header h1 {
+            color: #6cf;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        #header p {
+            color: #888;
+            font-size: 13px;
+        }
+
+        /* Main Content */
+        #main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Canvas Area - 70% width */
+        #canvas-area {
+            flex: 0 0 70%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #151515;
+            position: relative;
+        }
+
+        #svg-preview {
+            width: 90%;
+            height: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #svg-preview svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Controls Panel - 30% width */
+        #controls-panel {
+            flex: 0 0 30%;
+            background: #1a1a1a;
+            border-left: 2px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Control Sections */
+        .control-section {
+            background: #242424;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-section h3 {
+            color: #6cf;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .control-value {
+            color: #6cf;
+            font-family: 'Monaco', monospace;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #6cf;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #8df;
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #6cf;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #6cf;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background: #8df;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 204, 255, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #2a2a2a;
+            color: #6cf;
+            border: 1px solid #333;
+        }
+
+        button.secondary:hover {
+            background: #333;
+        }
+
+        button.danger {
+            background: #c44;
+        }
+
+        button.danger:hover {
+            background: #e66;
+        }
+
+        .preset-btn {
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        /* Status Display */
+        #status-display {
+            background: #1a1a1a;
+            border-top: 2px solid #333;
+            padding: 15px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .status-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-size: 16px;
+            color: #6cf;
+            font-family: 'Monaco', monospace;
+            font-weight: bold;
+        }
+
+        /* Progress Indicator */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6cf, #8df);
+            transition: width 0.3s ease;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: #2a2a2a;
+            border-left: 3px solid #6cf;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .info-box.warning {
+            border-left-color: #fc6;
+            background: #2a2418;
+        }
+
+        .info-box.success {
+            border-left-color: #4a4;
+            background: #1a2a1a;
+        }
+
+        /* Shape Preview Grid */
+        .shape-preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .shape-preview {
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .shape-preview.active {
+            border-color: #6cf;
+        }
+
+        .shape-preview svg {
+            width: 100%;
+            height: 80px;
+        }
+
+        .shape-preview-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div id="header">
+        <h1>FlowAngle Morphing - Flubber Implementation</h1>
+        <p>Team 1 - Morphing Agent 1: Testing shape morphing using Flubber library for smooth transitions</p>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <!-- Canvas Area -->
+        <div id="canvas-area">
+            <div id="svg-preview">
+                <svg id="morph-svg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+                    <path id="morph-path" d="" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div id="controls-panel">
+            <!-- Source Shape -->
+            <div class="control-section">
+                <h3>Source Shape</h3>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Sides (n)</span>
+                        <span class="control-value" id="source-sides-value">3</span>
+                    </div>
+                    <input type="range" id="source-sides" min="1" max="12" value="3" oninput="updateSourceShape()">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Curve Factor</span>
+                        <span class="control-value" id="source-curve-value">-0.66</span>
+                    </div>
+                    <input type="range" id="source-curve" min="-3" max="1" step="0.01" value="-0.66" oninput="updateSourceShape()">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Handle Angle</span>
+                        <span class="control-value" id="source-angle-value">60°</span>
+                    </div>
+                    <input type="range" id="source-angle" min="10" max="170" value="60" oninput="updateSourceShape()">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Rotation</span>
+                        <span class="control-value" id="source-rotation-value">0°</span>
+                    </div>
+                    <input type="range" id="source-rotation" min="0" max="360" value="0" oninput="updateSourceShape()">
+                </div>
+            </div>
+
+            <!-- Target Shape -->
+            <div class="control-section">
+                <h3>Target Shape</h3>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Sides (n)</span>
+                        <span class="control-value" id="target-sides-value">5</span>
+                    </div>
+                    <input type="range" id="target-sides" min="1" max="12" value="5" oninput="updateTargetShape()">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Curve Factor</span>
+                        <span class="control-value" id="target-curve-value">-1.20</span>
+                    </div>
+                    <input type="range" id="target-curve" min="-3" max="1" step="0.01" value="-1.20" oninput="updateTargetShape()">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Handle Angle</span>
+                        <span class="control-value" id="target-angle-value">36°</span>
+                    </div>
+                    <input type="range" id="target-angle" min="10" max="170" value="36" oninput="updateTargetShape()">
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Rotation</span>
+                        <span class="control-value" id="target-rotation-value">18°</span>
+                    </div>
+                    <input type="range" id="target-rotation" min="0" max="360" value="18" oninput="updateTargetShape()">
+                </div>
+            </div>
+
+            <!-- Animation Controls -->
+            <div class="control-section">
+                <h3>Morphing Animation</h3>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Progress</span>
+                        <span class="control-value" id="progress-value">0%</span>
+                    </div>
+                    <input type="range" id="morph-progress" min="0" max="100" value="0" oninput="updateMorphProgress()">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Animation Speed</span>
+                        <span class="control-value" id="speed-value">2.0s</span>
+                    </div>
+                    <input type="range" id="animation-speed" min="0.5" max="5" step="0.1" value="2.0" oninput="updateSpeed()">
+                </div>
+                <button onclick="startMorph()">▶ Morph (Source → Target)</button>
+                <button class="secondary" onclick="reverseMorph()">◀ Reverse (Target → Source)</button>
+                <button class="secondary" onclick="loopMorph()">⟲ Loop Animation</button>
+                <button class="danger" onclick="stopAnimation()">⏹ Stop</button>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="control-section">
+                <h3>Quick Preset Transitions</h3>
+                <div class="info-box">
+                    Load common shape pairs for testing
+                </div>
+                <button class="preset-btn secondary" onclick="loadPresetTransition('triangle-to-square')">Triangle → Square</button>
+                <button class="preset-btn secondary" onclick="loadPresetTransition('square-to-pentagon')">Square → Pentagon</button>
+                <button class="preset-btn secondary" onclick="loadPresetTransition('pentagon-to-hexagon')">Pentagon → Hexagon</button>
+                <button class="preset-btn secondary" onclick="loadPresetTransition('triangle-to-star')">Triangle → Star</button>
+                <button class="preset-btn secondary" onclick="loadPresetTransition('flower-to-smooth')">Flower → Smooth</button>
+                <button class="preset-btn secondary" onclick="loadPresetTransition('extreme-test')">Extreme Test (n=1 → n=12)</button>
+            </div>
+
+            <!-- Shape Previews -->
+            <div class="control-section">
+                <h3>Shape Previews</h3>
+                <div class="shape-preview-grid">
+                    <div class="shape-preview active">
+                        <div id="source-preview-svg"></div>
+                        <div class="shape-preview-label">Source</div>
+                    </div>
+                    <div class="shape-preview active">
+                        <div id="target-preview-svg"></div>
+                        <div class="shape-preview-label">Target</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Display -->
+    <div id="status-display">
+        <div class="status-item">
+            <div class="status-label">Flubber Status</div>
+            <div class="status-value" id="flubber-status">Ready</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Interpolator</div>
+            <div class="status-value" id="interpolator-status">Not Created</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Performance</div>
+            <div class="status-value" id="performance-status">-</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Visual Quality</div>
+            <div class="status-value" id="quality-rating">-</div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // FLOWANGLE GENERATION FUNCTION (from flowangle_animation.html)
+        // ============================================================================
+
+        function generateFlowAngle(state, size = 600) {
+            const center = { x: size / 2, y: size / 2 };
+            const radius = size * 0.30;
+            const vertices = [];
+            const angleStep = (2 * Math.PI) / state.sides;
+            const rotRad = (state.rotation * Math.PI) / 180;
+
+            // Calculate vertices
+            for (let i = 0; i < state.sides; i++) {
+                const angle = rotRad + i * angleStep;
+                vertices.push({
+                    x: center.x + radius * Math.cos(angle),
+                    y: center.y + radius * Math.sin(angle)
+                });
+            }
+
+            // Special case for n=1: circle
+            if (state.sides === 1) {
+                return {
+                    svg: `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                    </svg>`,
+                    path: null // Circle doesn't have a path, will need special handling
+                };
+            }
+
+            // Special case for n=2: curved line (not closed, skip for morphing)
+            if (state.sides === 2) {
+                const v1 = vertices[0];
+                const v2 = vertices[1];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const perpX = dy;
+                const perpY = -dx;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const offset = (baseLength / 2) * state.curveFactor;
+                const cpX = midX + (perpX / perpLength) * offset;
+                const cpY = midY + (perpY / perpLength) * offset;
+
+                return {
+                    svg: `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M ${v1.x} ${v1.y} Q ${cpX} ${cpY}, ${v2.x} ${v2.y}" fill="none" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                    </svg>`,
+                    path: null // Line doesn't form closed path
+                };
+            }
+
+            // Build triangles
+            const triangles = [];
+            const apexAngle = (state.handleAngle * Math.PI) / 180;
+
+            for (let i = 0; i < state.sides; i++) {
+                const v1 = vertices[i];
+                const v2 = vertices[(i + 1) % state.sides];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpX = dy;
+                const perpY = -dx;
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const height = (baseLength / 2) / Math.tan(apexAngle / 2);
+                const thirdX = midX + (perpX / perpLength) * height;
+                const thirdY = midY + (perpY / perpLength) * height;
+
+                triangles.push({ v1, v2, third: { x: thirdX, y: thirdY } });
+            }
+
+            // Build path
+            let pathData = `M ${vertices[0].x} ${vertices[0].y}`;
+
+            for (let i = 0; i < state.sides; i++) {
+                const tri = triangles[i];
+                const nextVertex = vertices[(i + 1) % state.sides];
+                const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.curveFactor;
+                const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.curveFactor;
+                const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.curveFactor;
+                const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.curveFactor;
+
+                pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${nextVertex.x} ${nextVertex.y}`;
+            }
+
+            pathData += ' Z';
+
+            const svg = `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                <path d="${pathData}" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>
+            </svg>`;
+
+            return { svg, path: pathData };
+        }
+
+        // ============================================================================
+        // MORPHING STATE MANAGEMENT
+        // ============================================================================
+
+        let sourceState = {
+            sides: 3,
+            curveFactor: -0.66,
+            handleAngle: 60,
+            rotation: 0
+        };
+
+        let targetState = {
+            sides: 5,
+            curveFactor: -1.20,
+            handleAngle: 36,
+            rotation: 18
+        };
+
+        let currentInterpolator = null;
+        let animationFrame = null;
+        let animationStartTime = null;
+        let animationDuration = 2000; // milliseconds
+        let isLooping = false;
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+
+        window.addEventListener('DOMContentLoaded', function() {
+            // Check if Flubber is loaded
+            if (typeof flubber !== 'undefined') {
+                document.getElementById('flubber-status').textContent = 'Loaded ✓';
+                document.getElementById('flubber-status').style.color = '#4a4';
+            } else {
+                document.getElementById('flubber-status').textContent = 'ERROR!';
+                document.getElementById('flubber-status').style.color = '#c44';
+                console.error('Flubber library failed to load!');
+            }
+
+            // Initialize shapes
+            updateSourceShape();
+            updateTargetShape();
+            createInterpolator();
+        });
+
+        // ============================================================================
+        // SHAPE UPDATE FUNCTIONS
+        // ============================================================================
+
+        function updateSourceShape() {
+            sourceState.sides = parseInt(document.getElementById('source-sides').value);
+            sourceState.curveFactor = parseFloat(document.getElementById('source-curve').value);
+            sourceState.handleAngle = parseFloat(document.getElementById('source-angle').value);
+            sourceState.rotation = parseFloat(document.getElementById('source-rotation').value);
+
+            // Update value displays
+            document.getElementById('source-sides-value').textContent = sourceState.sides;
+            document.getElementById('source-curve-value').textContent = sourceState.curveFactor.toFixed(2);
+            document.getElementById('source-angle-value').textContent = sourceState.handleAngle + '°';
+            document.getElementById('source-rotation-value').textContent = sourceState.rotation + '°';
+
+            // Update preview
+            const result = generateFlowAngle(sourceState, 120);
+            document.getElementById('source-preview-svg').innerHTML = result.svg;
+
+            // Recreate interpolator
+            createInterpolator();
+        }
+
+        function updateTargetShape() {
+            targetState.sides = parseInt(document.getElementById('target-sides').value);
+            targetState.curveFactor = parseFloat(document.getElementById('target-curve').value);
+            targetState.handleAngle = parseFloat(document.getElementById('target-angle').value);
+            targetState.rotation = parseFloat(document.getElementById('target-rotation').value);
+
+            // Update value displays
+            document.getElementById('target-sides-value').textContent = targetState.sides;
+            document.getElementById('target-curve-value').textContent = targetState.curveFactor.toFixed(2);
+            document.getElementById('target-angle-value').textContent = targetState.handleAngle + '°';
+            document.getElementById('target-rotation-value').textContent = targetState.rotation + '°';
+
+            // Update preview
+            const result = generateFlowAngle(targetState, 120);
+            document.getElementById('target-preview-svg').innerHTML = result.svg;
+
+            // Recreate interpolator
+            createInterpolator();
+        }
+
+        function updateSpeed() {
+            const speed = parseFloat(document.getElementById('animation-speed').value);
+            animationDuration = speed * 1000;
+            document.getElementById('speed-value').textContent = speed.toFixed(1) + 's';
+        }
+
+        // ============================================================================
+        // FLUBBER INTERPOLATOR CREATION
+        // ============================================================================
+
+        function createInterpolator() {
+            const startTime = performance.now();
+
+            try {
+                const sourcePath = generateFlowAngle(sourceState, 600).path;
+                const targetPath = generateFlowAngle(targetState, 600).path;
+
+                // Check for special cases (n=1 or n=2)
+                if (!sourcePath || !targetPath) {
+                    document.getElementById('interpolator-status').textContent = 'N/A (n<3)';
+                    document.getElementById('interpolator-status').style.color = '#fc6';
+                    document.getElementById('quality-rating').textContent = 'N/A';
+                    currentInterpolator = null;
+                    return;
+                }
+
+                // Create Flubber interpolator
+                currentInterpolator = flubber.interpolate(sourcePath, targetPath);
+
+                const endTime = performance.now();
+                const creationTime = (endTime - startTime).toFixed(2);
+
+                document.getElementById('interpolator-status').textContent = 'Created ✓';
+                document.getElementById('interpolator-status').style.color = '#4a4';
+                document.getElementById('performance-status').textContent = creationTime + ' ms';
+
+                // Set initial state to source
+                document.getElementById('morph-path').setAttribute('d', sourcePath);
+
+            } catch (error) {
+                console.error('Failed to create interpolator:', error);
+                document.getElementById('interpolator-status').textContent = 'ERROR';
+                document.getElementById('interpolator-status').style.color = '#c44';
+                document.getElementById('performance-status').textContent = 'Failed';
+                currentInterpolator = null;
+            }
+        }
+
+        // ============================================================================
+        // MORPHING ANIMATION
+        // ============================================================================
+
+        function updateMorphProgress() {
+            const progress = parseInt(document.getElementById('morph-progress').value);
+            const t = progress / 100;
+
+            if (currentInterpolator) {
+                const morphedPath = currentInterpolator(t);
+                document.getElementById('morph-path').setAttribute('d', morphedPath);
+            }
+
+            document.getElementById('progress-value').textContent = progress + '%';
+            document.getElementById('progress-fill').style.width = progress + '%';
+
+            // Update quality rating based on visual inspection
+            updateQualityRating(t);
+        }
+
+        function startMorph() {
+            if (!currentInterpolator) {
+                alert('Cannot morph: interpolator not available. Try shapes with n ≥ 3.');
+                return;
+            }
+
+            stopAnimation();
+            isLooping = false;
+            animationStartTime = performance.now();
+            animate(false);
+        }
+
+        function reverseMorph() {
+            if (!currentInterpolator) {
+                alert('Cannot morph: interpolator not available. Try shapes with n ≥ 3.');
+                return;
+            }
+
+            stopAnimation();
+            isLooping = false;
+            animationStartTime = performance.now();
+            animate(true);
+        }
+
+        function loopMorph() {
+            if (!currentInterpolator) {
+                alert('Cannot morph: interpolator not available. Try shapes with n ≥ 3.');
+                return;
+            }
+
+            stopAnimation();
+            isLooping = true;
+            animationStartTime = performance.now();
+            animate(false);
+        }
+
+        function stopAnimation() {
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            isLooping = false;
+        }
+
+        function animate(reverse = false) {
+            const elapsed = performance.now() - animationStartTime;
+            let t = Math.min(elapsed / animationDuration, 1.0);
+
+            if (reverse) {
+                t = 1.0 - t;
+            }
+
+            // Apply easing (ease-in-out)
+            const easedT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+            // Update path
+            const morphedPath = currentInterpolator(easedT);
+            document.getElementById('morph-path').setAttribute('d', morphedPath);
+
+            // Update progress display
+            const progress = Math.round(easedT * 100);
+            document.getElementById('morph-progress').value = progress;
+            document.getElementById('progress-value').textContent = progress + '%';
+            document.getElementById('progress-fill').style.width = progress + '%';
+
+            // Update quality rating
+            updateQualityRating(easedT);
+
+            // Continue animation
+            if (elapsed < animationDuration) {
+                animationFrame = requestAnimationFrame(() => animate(reverse));
+            } else if (isLooping) {
+                // Restart animation in loop mode
+                animationStartTime = performance.now();
+                animationFrame = requestAnimationFrame(() => animate(!reverse));
+            }
+        }
+
+        function updateQualityRating(t) {
+            // Simple quality heuristic: smooth mid-transition gets higher rating
+            // This is subjective - in practice you'd do visual inspection
+            const smoothness = 1 - Math.abs(t - 0.5) * 2; // Peak at t=0.5
+            const quality = 7 + smoothness * 3; // Scale from 7-10
+            document.getElementById('quality-rating').textContent = quality.toFixed(1) + '/10';
+        }
+
+        // ============================================================================
+        // PRESET TRANSITIONS
+        // ============================================================================
+
+        const presetTransitions = {
+            'triangle-to-square': {
+                source: { sides: 3, curveFactor: -0.66, handleAngle: 60, rotation: 0 },
+                target: { sides: 4, curveFactor: -0.66, handleAngle: 45, rotation: 0 }
+            },
+            'square-to-pentagon': {
+                source: { sides: 4, curveFactor: -0.66, handleAngle: 45, rotation: 0 },
+                target: { sides: 5, curveFactor: -0.66, handleAngle: 36, rotation: 18 }
+            },
+            'pentagon-to-hexagon': {
+                source: { sides: 5, curveFactor: -0.66, handleAngle: 36, rotation: 18 },
+                target: { sides: 6, curveFactor: -0.80, handleAngle: 30, rotation: 0 }
+            },
+            'triangle-to-star': {
+                source: { sides: 3, curveFactor: -0.66, handleAngle: 60, rotation: 0 },
+                target: { sides: 5, curveFactor: -1.20, handleAngle: 36, rotation: 18 }
+            },
+            'flower-to-smooth': {
+                source: { sides: 6, curveFactor: -0.80, handleAngle: 30, rotation: 0 },
+                target: { sides: 8, curveFactor: -0.50, handleAngle: 22.5, rotation: 0 }
+            },
+            'extreme-test': {
+                source: { sides: 1, curveFactor: 0, handleAngle: 90, rotation: 0 },
+                target: { sides: 12, curveFactor: -0.66, handleAngle: 15, rotation: 0 }
+            }
+        };
+
+        function loadPresetTransition(presetName) {
+            const preset = presetTransitions[presetName];
+            if (!preset) return;
+
+            stopAnimation();
+
+            // Update source
+            sourceState = { ...preset.source };
+            document.getElementById('source-sides').value = sourceState.sides;
+            document.getElementById('source-curve').value = sourceState.curveFactor;
+            document.getElementById('source-angle').value = sourceState.handleAngle;
+            document.getElementById('source-rotation').value = sourceState.rotation;
+
+            // Update target
+            targetState = { ...preset.target };
+            document.getElementById('target-sides').value = targetState.sides;
+            document.getElementById('target-curve').value = targetState.curveFactor;
+            document.getElementById('target-angle').value = targetState.handleAngle;
+            document.getElementById('target-rotation').value = targetState.rotation;
+
+            // Refresh displays
+            updateSourceShape();
+            updateTargetShape();
+
+            // Reset progress
+            document.getElementById('morph-progress').value = 0;
+            updateMorphProgress();
+        }
+    </script>
+</body>
+</html>

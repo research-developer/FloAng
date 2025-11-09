@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowAngle Hybrid Semantic Morphing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #header {
+            background: #1a1a1a;
+            border-bottom: 2px solid #333;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #6cf;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+        }
+
+        #main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        #canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #151515;
+            position: relative;
+        }
+
+        #svg-preview {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #svg-preview svg {
+            width: 100%;
+            height: 100%;
+            max-width: 800px;
+            max-height: 800px;
+        }
+
+        #controls-panel {
+            width: 400px;
+            background: #1a1a1a;
+            border-left: 2px solid #333;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .control-section {
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+
+        .section-title {
+            color: #6cf;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .control-value {
+            font-size: 14px;
+            color: #6cf;
+            font-family: 'Monaco', monospace;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #6cf;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #6cf;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            background: #6cf;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #8df;
+            transform: translateY(-2px);
+        }
+
+        .morph-button {
+            background: #4a4;
+            font-size: 16px;
+            padding: 15px;
+        }
+
+        .morph-button:hover {
+            background: #6c6;
+        }
+
+        .reset-button {
+            background: #c44;
+        }
+
+        .reset-button:hover {
+            background: #e66;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #6cf;
+            margin-right: 8px;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .phase-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+
+        .phase {
+            text-align: center;
+            flex: 1;
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 4px;
+            margin: 0 3px;
+            transition: all 0.3s;
+        }
+
+        .phase.active {
+            background: #6cf;
+            color: #000;
+        }
+
+        .phase-name {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .phase-range {
+            font-size: 9px;
+            margin-top: 3px;
+            opacity: 0.7;
+        }
+
+        .info-box {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #6cf;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #aaa;
+        }
+
+        .info-box strong {
+            color: #6cf;
+        }
+
+        .preview-shapes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .preview-shape {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .preview-shape-title {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .preview-shape svg {
+            width: 100%;
+            height: 120px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            color: #6cf;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Hybrid Semantic Morphing</h1>
+        <p class="subtitle">Intelligent FlowAngle shape interpolation with vertex fade in/out and radial symmetry preservation</p>
+    </div>
+
+    <div id="main-content">
+        <div id="canvas-area">
+            <div id="svg-preview"></div>
+        </div>
+
+        <div id="controls-panel">
+            <!-- Shape Configuration -->
+            <div class="control-section">
+                <div class="section-title">Shape Configuration</div>
+
+                <div class="preview-shapes">
+                    <div class="preview-shape">
+                        <div class="preview-shape-title">Source Shape</div>
+                        <div id="source-preview"></div>
+                    </div>
+                    <div class="preview-shape">
+                        <div class="preview-shape-title">Target Shape</div>
+                        <div id="target-preview"></div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Source N</label>
+                    <div class="slider-container">
+                        <input type="range" id="source-n" min="3" max="12" value="3" oninput="updatePreviews()">
+                        <span class="control-value" id="source-n-value">3</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Target N</label>
+                    <div class="slider-container">
+                        <input type="range" id="target-n" min="3" max="12" value="6" oninput="updatePreviews()">
+                        <span class="control-value" id="target-n-value">6</span>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-label">Vertex Diff</div>
+                        <div class="stat-value" id="vertex-diff">+3</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Mode</div>
+                        <div class="stat-value" id="morph-mode">Growing</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Morphing Parameters -->
+            <div class="control-section">
+                <div class="section-title">Morphing Parameters</div>
+
+                <div class="control-group">
+                    <label class="control-label">Curve Factor</label>
+                    <div class="slider-container">
+                        <input type="range" id="curve-factor" min="-3" max="1" step="0.01" value="-0.66" oninput="updatePreviews()">
+                        <span class="control-value" id="curve-value">-0.66</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Handle Angle</label>
+                    <div class="slider-container">
+                        <input type="range" id="handle-angle" min="10" max="170" value="60" oninput="updatePreviews()">
+                        <span class="control-value" id="handle-angle-value">60°</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Rotation</label>
+                    <div class="slider-container">
+                        <input type="range" id="rotation" min="0" max="360" value="0" oninput="updatePreviews()">
+                        <span class="control-value" id="rotation-value">0°</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Animation Control -->
+            <div class="control-section">
+                <div class="section-title">Animation Control</div>
+
+                <div class="control-group">
+                    <label class="control-label">Progress</label>
+                    <div class="slider-container">
+                        <input type="range" id="morph-progress" min="0" max="100" value="0" oninput="updateMorph()">
+                        <span class="control-value" id="progress-value">0%</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Animation Speed</label>
+                    <div class="slider-container">
+                        <input type="range" id="anim-speed" min="0.5" max="5" step="0.1" value="2" oninput="updateSpeedDisplay()">
+                        <span class="control-value" id="speed-value">2.0x</span>
+                    </div>
+                </div>
+
+                <button class="morph-button" onclick="toggleMorph()">▶ Start Morphing</button>
+                <button class="reset-button" onclick="resetMorph()">Reset</button>
+
+                <div class="phase-indicator" id="phase-indicator">
+                    <div class="phase" id="phase-1">
+                        <div class="phase-name">Adjust</div>
+                        <div class="phase-range">0-30%</div>
+                    </div>
+                    <div class="phase" id="phase-2">
+                        <div class="phase-name">Fade</div>
+                        <div class="phase-range">30-70%</div>
+                    </div>
+                    <div class="phase" id="phase-3">
+                        <div class="phase-name">Converge</div>
+                        <div class="phase-range">70-100%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Options -->
+            <div class="control-section">
+                <div class="section-title">Visualization</div>
+
+                <label>
+                    <input type="checkbox" id="show-guides" onchange="updateMorph()">
+                    <span>Show Guide Triangles</span>
+                </label>
+
+                <label>
+                    <input type="checkbox" id="show-vertices" checked onchange="updateMorph()">
+                    <span>Show Vertices</span>
+                </label>
+
+                <label>
+                    <input type="checkbox" id="show-handles" onchange="updateMorph()">
+                    <span>Show Control Handles</span>
+                </label>
+
+                <label>
+                    <input type="checkbox" id="show-phases" checked onchange="updatePhaseDisplay()">
+                    <span>Show Phase Indicator</span>
+                </label>
+            </div>
+
+            <!-- Algorithm Info -->
+            <div class="control-section">
+                <div class="section-title">Algorithm Info</div>
+                <div class="info-box">
+                    <strong>Hybrid Semantic Morphing</strong> understands FlowAngle structure:
+                    <br><br>
+                    <strong>Phase 1 (0-30%):</strong> Subtle shape adjustment to prepare for vertex changes
+                    <br><br>
+                    <strong>Phase 2 (30-70%):</strong> Intelligent vertex fade in/out at optimal radial positions
+                    <br><br>
+                    <strong>Phase 3 (70-100%):</strong> Final convergence to target shape with smooth control point interpolation
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let isAnimating = false;
+        let animationFrame = null;
+        let animationStartTime = 0;
+
+        // Initialize
+        updatePreviews();
+        updateMorph();
+
+        // FlowAngle generation function
+        function generateFlowAngle(n, curveFactor, handleAngle, rotation, size = 600) {
+            const center = { x: size / 2, y: size / 2 };
+            const radius = size * 0.30;
+            const vertices = [];
+            const angleStep = (2 * Math.PI) / n;
+            const rotRad = (rotation * Math.PI) / 180;
+
+            // Calculate vertices
+            for (let i = 0; i < n; i++) {
+                const angle = rotRad + i * angleStep;
+                vertices.push({
+                    x: center.x + radius * Math.cos(angle),
+                    y: center.y + radius * Math.sin(angle),
+                    angle: angle
+                });
+            }
+
+            // Special case for n=1: circle
+            if (n === 1) {
+                return {
+                    svg: `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                    </svg>`,
+                    vertices: vertices,
+                    triangles: [],
+                    controlPoints: []
+                };
+            }
+
+            // Special case for n=2: curved line
+            if (n === 2) {
+                const v1 = vertices[0];
+                const v2 = vertices[1];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const perpX = dy;
+                const perpY = -dx;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const offset = (baseLength / 2) * curveFactor;
+                const cpX = midX + (perpX / perpLength) * offset;
+                const cpY = midY + (perpY / perpLength) * offset;
+
+                return {
+                    svg: `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M ${v1.x} ${v1.y} Q ${cpX} ${cpY}, ${v2.x} ${v2.y}" fill="none" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                    </svg>`,
+                    vertices: vertices,
+                    triangles: [],
+                    controlPoints: [[cpX, cpY]]
+                };
+            }
+
+            // Build triangles for n >= 3
+            const triangles = [];
+            const apexAngle = (handleAngle * Math.PI) / 180;
+
+            for (let i = 0; i < n; i++) {
+                const v1 = vertices[i];
+                const v2 = vertices[(i + 1) % n];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpX = dy;
+                const perpY = -dx;
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const height = (baseLength / 2) / Math.tan(apexAngle / 2);
+                const thirdX = midX + (perpX / perpLength) * height;
+                const thirdY = midY + (perpY / perpLength) * height;
+
+                triangles.push({ v1, v2, third: { x: thirdX, y: thirdY } });
+            }
+
+            // Build path with control points
+            let shapes = '';
+            let pathData = `M ${vertices[0].x} ${vertices[0].y}`;
+            const controlPoints = [];
+
+            for (let i = 0; i < n; i++) {
+                const tri = triangles[i];
+                const nextVertex = vertices[(i + 1) % n];
+                const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * curveFactor;
+                const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * curveFactor;
+                const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * curveFactor;
+                const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * curveFactor;
+
+                controlPoints.push([cp1x, cp1y, cp2x, cp2y]);
+                pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${nextVertex.x} ${nextVertex.y}`;
+            }
+
+            shapes += `<path d="${pathData} Z" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>`;
+
+            return {
+                svg: `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`,
+                vertices: vertices,
+                triangles: triangles,
+                controlPoints: controlPoints
+            };
+        }
+
+        // Hybrid semantic morphing algorithm
+        function morphFlowAngles(sourceN, targetN, progress, curveFactor, handleAngle, rotation, showGuides, showVertices, showHandles, size = 600) {
+            const t = progress / 100;
+
+            // Determine phase
+            let currentPhase = 1;
+            if (t > 0.7) currentPhase = 3;
+            else if (t > 0.3) currentPhase = 2;
+
+            // Update phase indicators
+            for (let i = 1; i <= 3; i++) {
+                const elem = document.getElementById(`phase-${i}`);
+                if (elem) {
+                    elem.classList.toggle('active', i === currentPhase);
+                }
+            }
+
+            const center = { x: size / 2, y: size / 2 };
+            const radius = size * 0.30;
+            const rotRad = (rotation * Math.PI) / 180;
+
+            const isGrowing = targetN > sourceN;
+            const isShrinking = targetN < sourceN;
+            const maxN = Math.max(sourceN, targetN);
+            const minN = Math.min(sourceN, targetN);
+
+            // Generate vertices for both shapes on a common radial grid
+            const vertices = [];
+            const angleStep = (2 * Math.PI) / maxN;
+
+            for (let i = 0; i < maxN; i++) {
+                const angle = rotRad + i * angleStep;
+                const vertex = {
+                    x: center.x + radius * Math.cos(angle),
+                    y: center.y + radius * Math.sin(angle),
+                    angle: angle,
+                    opacity: 1.0
+                };
+
+                // Determine vertex visibility based on phase and growth/shrink mode
+                if (isGrowing) {
+                    // Growing: fade in new vertices during phase 2
+                    const sourceStep = (2 * Math.PI) / sourceN;
+                    const isOriginalVertex = (i % Math.floor(maxN / sourceN)) === 0;
+
+                    if (!isOriginalVertex) {
+                        if (t < 0.3) {
+                            vertex.opacity = 0;
+                        } else if (t < 0.7) {
+                            // Fade in during phase 2
+                            vertex.opacity = (t - 0.3) / 0.4;
+                        } else {
+                            vertex.opacity = 1.0;
+                        }
+                    }
+                } else if (isShrinking) {
+                    // Shrinking: fade out extra vertices during phase 2
+                    const targetStep = (2 * Math.PI) / targetN;
+                    const willRemainVertex = (i % Math.floor(maxN / targetN)) === 0;
+
+                    if (!willRemainVertex) {
+                        if (t < 0.3) {
+                            vertex.opacity = 1.0;
+                        } else if (t < 0.7) {
+                            // Fade out during phase 2
+                            vertex.opacity = 1.0 - ((t - 0.3) / 0.4);
+                        } else {
+                            vertex.opacity = 0;
+                        }
+                    }
+                }
+
+                vertices.push(vertex);
+            }
+
+            // Phase 1 (0-30%): Subtle shape adjustment
+            let shapeScaleFactor = 1.0;
+            if (t < 0.3) {
+                const phaseT = t / 0.3;
+                const easedPhaseT = phaseT * phaseT * (3 - 2 * phaseT); // Smooth step
+                shapeScaleFactor = 1.0 + (easedPhaseT * 0.05 * (isGrowing ? 1 : -1));
+            }
+
+            // Phase 3 (70-100%): Final convergence
+            let convergenceFactor = 0;
+            if (t > 0.7) {
+                const phaseT = (t - 0.7) / 0.3;
+                convergenceFactor = phaseT * phaseT * (3 - 2 * phaseT);
+            }
+
+            // Build triangles and paths
+            const apexAngle = (handleAngle * Math.PI) / 180;
+            let shapes = '';
+            let pathData = '';
+            let firstVertex = null;
+
+            for (let i = 0; i < maxN; i++) {
+                const v1 = vertices[i];
+                const v2 = vertices[(i + 1) % maxN];
+
+                // Skip invisible vertices
+                if (v1.opacity < 0.01) continue;
+
+                if (!firstVertex) {
+                    firstVertex = v1;
+                    pathData = `M ${v1.x * shapeScaleFactor} ${v1.y * shapeScaleFactor}`;
+                }
+
+                // Calculate triangle
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpX = dy;
+                const perpY = -dx;
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const height = (baseLength / 2) / Math.tan(apexAngle / 2);
+                const thirdX = midX + (perpX / perpLength) * height;
+                const thirdY = midY + (perpY / perpLength) * height;
+
+                // Show guide triangles
+                if (showGuides) {
+                    shapes += `<polygon points="${v1.x},${v1.y} ${v2.x},${v2.y} ${thirdX},${thirdY}" fill="none" stroke="#6cf" stroke-width="1" stroke-dasharray="3,3" opacity="${0.3 * Math.min(v1.opacity, v2.opacity)}"/>`;
+                }
+
+                // Calculate control points
+                const cp1x = v1.x + (thirdX - v1.x) * curveFactor;
+                const cp1y = v1.y + (thirdY - v1.y) * curveFactor;
+                const cp2x = v2.x + (thirdX - v2.x) * curveFactor;
+                const cp2y = v2.y + (thirdY - v2.y) * curveFactor;
+
+                // Apply convergence smoothing in phase 3
+                const smoothCP1x = cp1x;
+                const smoothCP1y = cp1y;
+                const smoothCP2x = cp2x;
+                const smoothCP2y = cp2y;
+
+                // Build path segment
+                const segmentOpacity = Math.min(v1.opacity, v2.opacity);
+                if (segmentOpacity > 0.01) {
+                    pathData += ` C ${smoothCP1x * shapeScaleFactor} ${smoothCP1y * shapeScaleFactor}, ${smoothCP2x * shapeScaleFactor} ${smoothCP2y * shapeScaleFactor}, ${v2.x * shapeScaleFactor} ${v2.y * shapeScaleFactor}`;
+                }
+
+                // Show control handles
+                if (showHandles && segmentOpacity > 0.5) {
+                    shapes += `<circle cx="${cp1x}" cy="${cp1y}" r="3" fill="#f66" opacity="0.6"/>`;
+                    shapes += `<circle cx="${cp2x}" cy="${cp2y}" r="3" fill="#6f6" opacity="0.6"/>`;
+                    shapes += `<line x1="${v1.x}" y1="${v1.y}" x2="${cp1x}" y2="${cp1y}" stroke="#f66" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
+                    shapes += `<line x1="${v2.x}" y1="${v2.y}" x2="${cp2x}" y2="${cp2y}" stroke="#6f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
+                }
+            }
+
+            // Close path
+            if (pathData) {
+                pathData += ' Z';
+                shapes += `<path d="${pathData}" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>`;
+            }
+
+            // Show vertices
+            if (showVertices) {
+                vertices.forEach(v => {
+                    if (v.opacity > 0.01) {
+                        shapes += `<circle cx="${v.x}" cy="${v.y}" r="4" fill="#6cf" stroke="#fff" stroke-width="1" opacity="${v.opacity}"/>`;
+                    }
+                });
+            }
+
+            return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
+        }
+
+        function updatePreviews() {
+            const sourceN = parseInt(document.getElementById('source-n').value);
+            const targetN = parseInt(document.getElementById('target-n').value);
+            const curveFactor = parseFloat(document.getElementById('curve-factor').value);
+            const handleAngle = parseFloat(document.getElementById('handle-angle').value);
+            const rotation = parseFloat(document.getElementById('rotation').value);
+
+            // Update value displays
+            document.getElementById('source-n-value').textContent = sourceN;
+            document.getElementById('target-n-value').textContent = targetN;
+            document.getElementById('curve-value').textContent = curveFactor.toFixed(2);
+            document.getElementById('handle-angle-value').textContent = handleAngle + '°';
+            document.getElementById('rotation-value').textContent = rotation + '°';
+
+            // Update stats
+            const diff = targetN - sourceN;
+            document.getElementById('vertex-diff').textContent = (diff >= 0 ? '+' : '') + diff;
+            document.getElementById('morph-mode').textContent = diff > 0 ? 'Growing' : (diff < 0 ? 'Shrinking' : 'Equal');
+
+            // Generate previews
+            const sourceShape = generateFlowAngle(sourceN, curveFactor, handleAngle, rotation, 240);
+            const targetShape = generateFlowAngle(targetN, curveFactor, handleAngle, rotation, 240);
+
+            document.getElementById('source-preview').innerHTML = sourceShape.svg;
+            document.getElementById('target-preview').innerHTML = targetShape.svg;
+
+            // Update main morph if not animating
+            if (!isAnimating) {
+                updateMorph();
+            }
+        }
+
+        function updateMorph() {
+            const sourceN = parseInt(document.getElementById('source-n').value);
+            const targetN = parseInt(document.getElementById('target-n').value);
+            const progress = parseFloat(document.getElementById('morph-progress').value);
+            const curveFactor = parseFloat(document.getElementById('curve-factor').value);
+            const handleAngle = parseFloat(document.getElementById('handle-angle').value);
+            const rotation = parseFloat(document.getElementById('rotation').value);
+            const showGuides = document.getElementById('show-guides').checked;
+            const showVertices = document.getElementById('show-vertices').checked;
+            const showHandles = document.getElementById('show-handles').checked;
+
+            // Update progress display
+            document.getElementById('progress-value').textContent = progress.toFixed(0) + '%';
+
+            // Generate morphed shape
+            const morphedSVG = morphFlowAngles(
+                sourceN, targetN, progress,
+                curveFactor, handleAngle, rotation,
+                showGuides, showVertices, showHandles,
+                800
+            );
+
+            document.getElementById('svg-preview').innerHTML = morphedSVG;
+        }
+
+        function updateSpeedDisplay() {
+            const speed = parseFloat(document.getElementById('anim-speed').value);
+            document.getElementById('speed-value').textContent = speed.toFixed(1) + 'x';
+        }
+
+        function updatePhaseDisplay() {
+            const showPhases = document.getElementById('show-phases').checked;
+            document.getElementById('phase-indicator').style.display = showPhases ? 'flex' : 'none';
+        }
+
+        function toggleMorph() {
+            const button = event.target;
+
+            if (isAnimating) {
+                // Stop animation
+                isAnimating = false;
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                    animationFrame = null;
+                }
+                button.textContent = '▶ Start Morphing';
+            } else {
+                // Start animation
+                isAnimating = true;
+                animationStartTime = Date.now();
+                button.textContent = '⏸ Pause Morphing';
+                animate();
+            }
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+
+            const speed = parseFloat(document.getElementById('anim-speed').value);
+            const elapsed = (Date.now() - animationStartTime) / 1000; // seconds
+            const cycleDuration = 4 / speed; // 4 seconds at 1x speed
+
+            // Ping-pong animation: 0 -> 100 -> 0
+            const cycleProgress = (elapsed % (cycleDuration * 2)) / cycleDuration;
+            const progress = cycleProgress <= 1 ? cycleProgress * 100 : (2 - cycleProgress) * 100;
+
+            document.getElementById('morph-progress').value = progress;
+            updateMorph();
+
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        function resetMorph() {
+            // Stop animation if running
+            if (isAnimating) {
+                isAnimating = false;
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                    animationFrame = null;
+                }
+                document.querySelector('.morph-button').textContent = '▶ Start Morphing';
+            }
+
+            // Reset to start
+            document.getElementById('morph-progress').value = 0;
+            updateMorph();
+        }
+
+        // Initialize phase display
+        updatePhaseDisplay();
+    </script>
+</body>
+</html>
