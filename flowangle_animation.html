@@ -35,22 +35,26 @@
         </div>
 
         <div class="control-group control-group-extended">
-            <label class="control-label">Curve Factor</label>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="range" id="curve-factor" min="-3" max="1" step="0.01" value="-0.66" oninput="updatePreview()">
-                <span class="control-value" id="curve-value">-0.66</span>
+            <label class="control-label">Flow</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="stepper-btn" id="flow-dec" onclick="adjustFlow(-0.01)">◀</button>
+                <input type="number" id="flow-factor" min="-3" max="1" step="0.01" value="-0.66" onchange="onFlowChange()" style="width: 80px; text-align: center;">
+                <button class="stepper-btn" id="flow-inc" onclick="adjustFlow(0.01)">▶</button>
+                <span class="control-value" id="flow-value">-0.66</span>
             </div>
-            <div class="range-indicator" id="curve-range-indicator">[-3.00 to 1.00]</div>
-            <div class="constraint-buttons" id="curve-constraints" style="display: none;">
-                <button class="constraint-btn" onclick="captureConstraint('curveFactor', 'min')">Set Min</button>
-                <button class="constraint-btn" onclick="captureConstraint('curveFactor', 'max')">Set Max</button>
+            <div class="range-indicator" id="flow-range-indicator">[-3.00 to 1.00]</div>
+            <div class="constraint-buttons" id="flow-constraints" style="display: none;">
+                <button class="constraint-btn" onclick="captureConstraint('flowFactor', 'min')">Set Min</button>
+                <button class="constraint-btn" onclick="captureConstraint('flowFactor', 'max')">Set Max</button>
             </div>
         </div>
 
         <div class="control-group control-group-extended">
-            <label class="control-label">Handle Angle</label>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="range" id="handle-angle" min="10" max="170" value="60" oninput="updatePreview()">
+            <label class="control-label">Angle</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="stepper-btn" id="angle-dec" onclick="adjustAngle(-1)">◀</button>
+                <input type="number" id="handle-angle" min="10" max="170" step="1" value="60" onchange="onAngleChange()" style="width: 80px; text-align: center;">
+                <button class="stepper-btn" id="angle-inc" onclick="adjustAngle(1)">▶</button>
                 <span class="control-value" id="handle-angle-value">60°</span>
             </div>
             <div class="range-indicator" id="angle-range-indicator">[10° to 170°]</div>
@@ -61,9 +65,11 @@
         </div>
 
         <div class="control-group control-group-extended">
-            <label class="control-label">Rotation</label>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="range" id="rotation" min="0" max="360" value="0" oninput="updatePreview()">
+            <label class="control-label">Spin</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="stepper-btn" id="spin-dec" onclick="adjustSpin(-1)">◀</button>
+                <input type="number" id="rotation" min="0" max="360" step="1" value="0" onchange="onSpinChange()" style="width: 80px; text-align: center;">
+                <button class="stepper-btn" id="spin-inc" onclick="adjustSpin(1)">▶</button>
                 <span class="control-value" id="rotation-value">0°</span>
             </div>
             <div class="range-indicator" id="rotation-range-indicator">[0° to 360°]</div>
@@ -186,7 +192,7 @@
                         <input type="number" id="explore-angle-step" min="1" max="20" value="5" style="width: 100%;">
                     </div>
                     <div class="control-group">
-                        <label class="control-label">Curve Factor Step</label>
+                        <label class="control-label">Flow Step</label>
                         <input type="number" id="explore-curve-step" min="0.05" max="0.5" step="0.05" value="0.1" style="width: 100%;">
                     </div>
                     <div class="control-group">
@@ -267,12 +273,12 @@
 
     <!-- Pulse Animation Controls -->
     <div id="pulse-controls">
-        <!-- Curve Factor Pulse -->
+        <!-- Flow Pulse -->
         <div class="pulse-param" id="pulse-curve-param">
             <div class="pulse-header">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
                     <input type="checkbox" id="pulse-curve-enabled" onchange="updatePulseAnimations()">
-                    <span>Curve Factor Pulse</span>
+                    <span>Flow Pulse</span>
                 </label>
             </div>
             <div class="pulse-controls-row">
@@ -450,7 +456,7 @@
 
         // Parameter mapping for constraint system
         const paramMap = {
-            'curveFactor': { id: 'curve-factor', display: 'Curve Factor', unit: '', decimals: 2 },
+            'flowFactor': { id: 'flow-factor', display: 'Flow', unit: '', decimals: 2 },
             'handleAngle': { id: 'handle-angle', display: 'Handle Angle', unit: '°', decimals: 0 },
             'rotation': { id: 'rotation', display: 'Rotation', unit: '°', decimals: 0 }
         };
@@ -501,7 +507,7 @@
         function getCurrentState() {
             return {
                 sides: parseInt(document.getElementById('sides').value),
-                curveFactor: parseFloat(document.getElementById('curve-factor').value),
+                flowFactor: parseFloat(document.getElementById('flow-factor').value),
                 handleAngle: parseFloat(document.getElementById('handle-angle').value),
                 rotation: parseFloat(document.getElementById('rotation').value),
                 showGuides: document.getElementById('show-guides').checked,
@@ -531,7 +537,7 @@
 
         function applyState(state) {
             document.getElementById('sides').value = state.sides;
-            document.getElementById('curve-factor').value = state.curveFactor;
+            document.getElementById('flow-factor').value = state.flowFactor;
             document.getElementById('handle-angle').value = state.handleAngle;
             document.getElementById('rotation').value = state.rotation;
             document.getElementById('show-guides').checked = state.showGuides;
@@ -577,7 +583,7 @@
 
             // Update value displays
             document.getElementById('sides-value').textContent = state.sides;
-            document.getElementById('curve-value').textContent = state.curveFactor.toFixed(2);
+            document.getElementById('flow-value').textContent = state.flowFactor.toFixed(2);
             document.getElementById('handle-angle-value').textContent = state.handleAngle + '°';
             document.getElementById('rotation-value').textContent = state.rotation + '°';
 
@@ -622,7 +628,7 @@
             const svgElement = svgDoc.querySelector('svg');
 
             // Run geometric analysis
-            analysisResults = geometricAnalyzer.analyzeFlowAngle(state, 600);
+            analysisResults = geometricAnalyzer.analyzeFlowAngle(state, 600); // TODO: Make size dynamic based on container width
 
             let overlayShapes = '';
 
@@ -803,7 +809,7 @@
             return Math.max(0, Math.min(1, totalLight));
         }
 
-        function generateFlowAngle(state, size = 600) {
+        function generateFlowAngle(state, size = 600) { // TODO: Make size dynamic based on container width
             const center = { x: size / 2, y: size / 2 };
             const radius = size * (1 / state.sides);
             const vertices = [];
@@ -838,7 +844,7 @@
                 const perpY = -dx;
                 const baseLength = Math.sqrt(dx * dx + dy * dy);
                 const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
-                const offset = (baseLength / 2) * state.curveFactor;
+                const offset = (baseLength / 2) * state.flowFactor;
                 const cpX = midX + (perpX / perpLength) * offset;
                 const cpY = midY + (perpY / perpLength) * offset;
 
@@ -888,10 +894,10 @@
             for (let i = 0; i < state.sides; i++) {
                 const tri = triangles[i];
                 const nextVertex = vertices[(i + 1) % state.sides];
-                const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.curveFactor;
-                const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.curveFactor;
-                const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.curveFactor;
-                const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.curveFactor;
+                const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.flowFactor;
+                const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.flowFactor;
+                const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.flowFactor;
+                const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.flowFactor;
 
                 for (let j = 0; j <= segments; j++) {
                     const t = j / segments;
@@ -927,10 +933,10 @@
 
                 for (let i = 0; i < state.sides; i++) {
                     const tri = triangles[i];
-                    const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.curveFactor;
-                    const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.curveFactor;
-                    const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.curveFactor;
-                    const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.curveFactor;
+                    const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.flowFactor;
+                    const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.flowFactor;
+                    const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.flowFactor;
+                    const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.flowFactor;
 
                     shapes += `<circle cx="${cp1x}" cy="${cp1y}" r="2" fill="#f66" opacity="0.6"/>`;
                     shapes += `<circle cx="${cp2x}" cy="${cp2y}" r="2" fill="#6f6" opacity="0.6"/>`;
@@ -1000,16 +1006,16 @@
 
         function loadPreset(name) {
             const presets = {
-                triquetra: { sides: 3, curveFactor: -0.66, handleAngle: 60, rotation: 0 },
-                flower: { sides: 6, curveFactor: -0.8, handleAngle: 30, rotation: 0 },
-                star: { sides: 5, curveFactor: -1.2, handleAngle: 36, rotation: 18 },
-                smooth: { sides: 8, curveFactor: -0.5, handleAngle: 22.5, rotation: 0 }
+                triquetra: { sides: 3, flowFactor: -0.66, handleAngle: 60, rotation: 0 },
+                flower: { sides: 6, flowFactor: -0.8, handleAngle: 30, rotation: 0 },
+                star: { sides: 5, flowFactor: -1.2, handleAngle: 36, rotation: 18 },
+                smooth: { sides: 8, flowFactor: -0.5, handleAngle: 22.5, rotation: 0 }
             };
 
             const preset = presets[name];
             if (preset) {
                 document.getElementById('sides').value = preset.sides;
-                document.getElementById('curve-factor').value = preset.curveFactor;
+                document.getElementById('flow-factor').value = preset.flowFactor;
                 document.getElementById('handle-angle').value = preset.handleAngle;
                 document.getElementById('rotation').value = preset.rotation;
                 updatePreview();
@@ -1045,7 +1051,7 @@
             const easing = easingFunctions[easingName];
 
             const baseValues = {
-                curve: parseFloat(document.getElementById('curve-factor').value),
+                curve: parseFloat(document.getElementById('flow-factor').value),
                 angle: parseFloat(document.getElementById('handle-angle').value),
                 rotation: parseFloat(document.getElementById('rotation').value)
             };
@@ -1060,7 +1066,7 @@
                 const oscillation = (easedT - 0.5) * 2 * range;
 
                 if (param === 'curve') {
-                    document.getElementById('curve-factor').value = baseValues.curve + oscillation;
+                    document.getElementById('flow-factor').value = baseValues.curve + oscillation;
                 } else if (param === 'angle') {
                     document.getElementById('handle-angle').value = baseValues.angle + oscillation;
                 } else if (param === 'rotation') {
@@ -1104,7 +1110,7 @@
         function interpolateState(state1, state2, t) {
             return {
                 sides: Math.round(state1.sides + (state2.sides - state1.sides) * t),
-                curveFactor: state1.curveFactor + (state2.curveFactor - state1.curveFactor) * t,
+                flowFactor: state1.flowFactor + (state2.flowFactor - state1.flowFactor) * t,
                 handleAngle: state1.handleAngle + (state2.handleAngle - state1.handleAngle) * t,
                 rotation: state1.rotation + (state2.rotation - state1.rotation) * t,
                 showGuides: t < 0.5 ? state1.showGuides : state2.showGuides,
@@ -1166,7 +1172,7 @@
 
             // Add basic parameters with compact names
             params.set('s', state.sides);
-            params.set('c', state.curveFactor.toFixed(3));
+            params.set('c', state.flowFactor.toFixed(3));
             params.set('a', state.handleAngle);
             params.set('r', state.rotation);
             params.set('g', state.showGuides ? '1' : '0');
@@ -1201,7 +1207,7 @@
                     // Compress keyframes data by only storing essential values
                     const compactKeyframes = keyframes.map(kf => ({
                         s: kf.sides,
-                        c: parseFloat(kf.curveFactor.toFixed(3)),
+                        c: parseFloat(kf.flowFactor.toFixed(3)),
                         a: kf.handleAngle,
                         r: kf.rotation,
                         g: kf.showGuides ? 1 : 0,
@@ -1253,7 +1259,7 @@
                 if (params.has('c')) {
                     const curve = parseFloat(params.get('c'));
                     if (!isNaN(curve)) {
-                        document.getElementById('curve-factor').value = curve;
+                        document.getElementById('flow-factor').value = curve;
                         stateLoaded = true;
                     }
                 }
@@ -1321,7 +1327,7 @@
                         // Expand compact keyframes to full format
                         keyframes = compactKeyframes.map(kf => ({
                             sides: kf.s,
-                            curveFactor: kf.c,
+                            flowFactor: kf.c,
                             handleAngle: kf.a,
                             rotation: kf.r,
                             showGuides: kf.g === 1,
@@ -1368,7 +1374,7 @@
 
                 // Apply configuration to UI
                 document.getElementById('sides').value = config.sides;
-                document.getElementById('curve-factor').value = config.curveFactor;
+                document.getElementById('flow-factor').value = config.flowFactor;
                 document.getElementById('handle-angle').value = config.handleAngle;
                 document.getElementById('rotation').value = config.rotation;
                 document.getElementById('show-guides').checked = config.showGuides;
@@ -1440,7 +1446,7 @@
                 const state = getCurrentState();
                 const configData = {
                     sides: state.sides,
-                    curveFactor: state.curveFactor,
+                    flowFactor: state.flowFactor,
                     handleAngle: state.handleAngle,
                     rotation: state.rotation,
                     showGuides: state.showGuides,
@@ -1586,7 +1592,7 @@
             // Create download link
             const downloadLink = document.createElement('a');
             const state = getCurrentState();
-            const filename = `flowangle-n${state.sides}-c${state.curveFactor.toFixed(2)}-a${state.handleAngle}.svg`;
+            const filename = `flowangle-n${state.sides}-c${state.flowFactor.toFixed(2)}-a${state.handleAngle}.svg`;
             downloadLink.href = svgUrl;
             downloadLink.download = filename;
             document.body.appendChild(downloadLink);
@@ -1605,10 +1611,11 @@
                 return;
             }
 
+            // TODO: Make width and height dynamic based on container width
             // Get SVG dimensions respecting aspect ratio
             const viewBox = svgElement.getAttribute('viewBox');
-            let width = 600;
-            let height = 600;
+            let width = 600; // TODO: Make width dynamic based on container width
+            let height = 600; // TODO: Make height dynamic based on container width
 
             if (viewBox) {
                 const [, , vbWidth, vbHeight] = viewBox.split(' ').map(Number);
@@ -1632,8 +1639,8 @@
             } else {
                 // Fallback to bbox if no viewBox
                 const bbox = svgElement.getBoundingClientRect();
-                width = bbox.width || 600;
-                height = bbox.height || 600;
+                width = bbox.width || 600; // TODO: Make width dynamic based on container width
+                height = bbox.height || 600; // TODO: Make height dynamic based on container width
             }
 
             // Create canvas
@@ -1664,7 +1671,7 @@
                 // Convert to PNG and download
                 canvas.toBlob(function(blob) {
                     const state = getCurrentState();
-                    const filename = `flowangle-n${state.sides}-c${state.curveFactor.toFixed(2)}-a${state.handleAngle}.png`;
+                    const filename = `flowangle-n${state.sides}-c${state.flowFactor.toFixed(2)}-a${state.handleAngle}.png`;
                     const downloadLink = document.createElement('a');
                     downloadLink.href = URL.createObjectURL(blob);
                     downloadLink.download = filename;
@@ -1725,7 +1732,7 @@
                 try {
                     currentDiscoveries = parameterExplorer.exploreParameterSpace(n, {
                         handleAngleStep: steps.angleStep,
-                        curveFactorStep: steps.curveStep
+                        flowFactorStep: steps.curveStep
                     });
 
                     console.log(parameterExplorer.generateReport(n));
@@ -1803,7 +1810,7 @@
             html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">`;
             html += `<div><span style="color: #888;">Sides:</span> <span style="color: #6cf;">${state.sides}</span></div>`;
             html += `<div><span style="color: #888;">Handle Angle:</span> <span style="color: #6cf;">${state.handleAngle}°</span></div>`;
-            html += `<div><span style="color: #888;">Curve Factor:</span> <span style="color: #6cf;">${state.curveFactor}</span></div>`;
+            html += `<div><span style="color: #888;">Flow:</span> <span style="color: #6cf;">${state.flowFactor}</span></div>`;
             html += `<div><span style="color: #888;">Rotation:</span> <span style="color: #6cf;">${state.rotation}°</span></div>`;
             html += '</div></div>';
 
@@ -1843,7 +1850,7 @@
 
             // Apply state to UI
             document.getElementById('sides').value = state.sides;
-            document.getElementById('curve-factor').value = state.curveFactor;
+            document.getElementById('flow-factor').value = state.flowFactor;
             document.getElementById('handle-angle').value = state.handleAngle;
             document.getElementById('rotation').value = state.rotation;
 
@@ -1854,7 +1861,7 @@
             closeExplorer();
 
             // Show notification
-            showNotification(`Loaded configuration: n=${state.sides}, angle=${state.handleAngle}°, curve=${state.curveFactor}`, 'success');
+            showNotification(`Loaded configuration: n=${state.sides}, angle=${state.handleAngle}°, curve=${state.flowFactor}`, 'success');
         }
 
         function exportExploration() {
@@ -1937,7 +1944,7 @@
                     // Use coarse resolution for quick discoveries
                     const discoveries = parameterExplorer.exploreParameterSpace(currentN, {
                         handleAngleStep: 10,
-                        curveFactorStep: 0.2
+                        flowFactorStep: 0.2
                     });
 
                     // Cache results
@@ -2043,7 +2050,7 @@
             labelDiv.innerHTML = `
                 <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">${label}</div>
                 <div style="font-size: 9px; color: #888;">
-                    a:${config.state.handleAngle}° c:${config.state.curveFactor.toFixed(1)}
+                    a:${config.state.handleAngle}° c:${config.state.flowFactor.toFixed(1)}
                 </div>
             `;
 
@@ -2058,7 +2065,7 @@
 
             // Apply state to UI
             document.getElementById('sides').value = state.sides;
-            document.getElementById('curve-factor').value = state.curveFactor;
+            document.getElementById('flow-factor').value = state.flowFactor;
             document.getElementById('handle-angle').value = state.handleAngle;
             document.getElementById('rotation').value = state.rotation;
 
@@ -2066,7 +2073,7 @@
             updatePreview();
 
             // Show notification
-            showNotification(`Loaded: ${state.handleAngle}°, ${state.curveFactor}`, 'success');
+            showNotification(`Loaded: ${state.handleAngle}°, ${state.flowFactor}`, 'success');
 
             // Switch back to keyframes tab to see the result
             switchToKeyframesTab();
@@ -2080,6 +2087,170 @@
             document.getElementById('keyframes-tab').classList.add('active');
             document.getElementById('discoveries-tab').classList.remove('active');
         }
+
+        // ===== STEPPER CONTROLS & SMART LIMITING =====
+
+        // Parameter limits tracking
+        let parameterLimits = {
+            flow: { min: -3, max: 1 },
+            angle: { min: 10, max: 170 },
+            spin: { min: 0, max: 360 }
+        };
+        let lastFeatureCount = 0;
+        let staleIterations = 0;
+        const STALE_THRESHOLD = 5;
+
+        // Stepper functions
+        function adjustFlow(delta) {
+            const input = document.getElementById('flow-factor');
+            let newValue = parseFloat(input.value) + delta;
+            newValue = Math.max(parameterLimits.flow.min, Math.min(parameterLimits.flow.max, newValue));
+            input.value = newValue.toFixed(2);
+            onFlowChange();
+        }
+
+        function adjustAngle(delta) {
+            const input = document.getElementById('handle-angle');
+            let newValue = parseInt(input.value) + delta;
+            newValue = Math.max(parameterLimits.angle.min, Math.min(parameterLimits.angle.max, newValue));
+            input.value = newValue;
+            onAngleChange();
+        }
+
+        function adjustSpin(delta) {
+            const input = document.getElementById('rotation');
+            let newValue = parseInt(input.value) + delta;
+            newValue = Math.max(parameterLimits.spin.min, Math.min(parameterLimits.spin.max, newValue));
+            input.value = newValue;
+            onSpinChange();
+        }
+
+        // Change handlers
+        function onFlowChange() {
+            updateValueDisplay('flow');
+            updatePreview();
+            setTimeout(checkParameterLimits, 50);
+        }
+
+        function onAngleChange() {
+            updateValueDisplay('angle');
+            updatePreview();
+            setTimeout(checkParameterLimits, 50);
+        }
+
+        function onSpinChange() {
+            updateValueDisplay('spin');
+            updatePreview();
+            setTimeout(checkParameterLimits, 50);
+        }
+
+        function updateValueDisplay(param) {
+            if (param === 'flow') {
+                const value = document.getElementById('flow-factor').value;
+                document.getElementById('flow-value').textContent = parseFloat(value).toFixed(2);
+            } else if (param === 'angle') {
+                const value = document.getElementById('handle-angle').value;
+                document.getElementById('handle-angle-value').textContent = value + '°';
+            } else if (param === 'spin') {
+                const value = document.getElementById('rotation').value;
+                document.getElementById('rotation-value').textContent = value + '°';
+            }
+        }
+
+        // Smart limit detection
+        function checkParameterLimits() {
+            const state = getCurrentState();
+
+            // Check for canvas explosion
+            const hasExploded = detectCanvasExplosion(state);
+
+            // Check for feature staleness
+            const currentFeatureCount = getFeatureCount(state);
+            if (currentFeatureCount === lastFeatureCount) {
+                staleIterations++;
+            } else {
+                staleIterations = 0;
+                lastFeatureCount = currentFeatureCount;
+            }
+            const isStale = staleIterations >= STALE_THRESHOLD;
+
+            // Update button states
+            updateStepperButtons(state, hasExploded, isStale);
+        }
+
+        function detectCanvasExplosion(state) {
+            // Simple heuristic: if total area is more than 2x canvas area, it's exploded
+            if (!analysisResults || !analysisResults.regions) return false;
+
+            const canvasArea = 600 * 600;
+            const totalArea = analysisResults.regions.reduce((sum, r) => sum + r.area, 0);
+
+            return totalArea > canvasArea * 2 || totalArea < canvasArea * 0.01;
+        }
+
+        function getFeatureCount(state) {
+            if (!analysisResults || !analysisResults.regions) return 0;
+            return analysisResults.regions.length + (analysisResults.intersections?.length || 0);
+        }
+
+        function updateStepperButtons(state, hasExploded, isStale) {
+            // Flow buttons
+            const flowDec = document.getElementById('flow-dec');
+            const flowInc = document.getElementById('flow-inc');
+            const flowValue = state.flowFactor;
+
+            flowDec.disabled = flowValue <= parameterLimits.flow.min;
+            flowInc.disabled = flowValue >= parameterLimits.flow.max || (hasExploded && isStale);
+
+            // Angle buttons
+            const angleDec = document.getElementById('angle-dec');
+            const angleInc = document.getElementById('angle-inc');
+            const angleValue = state.handleAngle;
+
+            angleDec.disabled = angleValue <= parameterLimits.angle.min;
+            angleInc.disabled = angleValue >= parameterLimits.angle.max || (hasExploded && isStale);
+
+            // Spin buttons (always enabled within range)
+            const spinDec = document.getElementById('spin-dec');
+            const spinInc = document.getElementById('spin-inc');
+            const spinValue = state.rotation;
+
+            spinDec.disabled = spinValue <= parameterLimits.spin.min;
+            spinInc.disabled = spinValue >= parameterLimits.spin.max;
+        }
+
+        // Reset limits when sides change
+        let sidesChangeListenerCleanup = null;
+
+        function setupSidesChangeListener() {
+            // Clean up old listener
+            if (sidesChangeListenerCleanup) {
+                sidesChangeListenerCleanup();
+            }
+
+            const sidesInput = document.getElementById('sides');
+            const handler = function() {
+                // Reset staleness tracking
+                lastFeatureCount = 0;
+                staleIterations = 0;
+
+                // Re-enable all buttons (they'll be re-evaluated)
+                setTimeout(checkParameterLimits, 100);
+            };
+
+            sidesInput.addEventListener('input', handler);
+
+            // Return cleanup function
+            sidesChangeListenerCleanup = () => {
+                sidesInput.removeEventListener('input', handler);
+            };
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            setupSidesChangeListener();
+            setTimeout(checkParameterLimits, 200);
+        });
 
         // Update n-display when sides slider changes
         document.getElementById('sides').addEventListener('input', function() {

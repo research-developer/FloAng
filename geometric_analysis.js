@@ -51,10 +51,10 @@ class GeometricAnalyzer {
             const thirdX = midX + (perpX / perpLength) * height;
             const thirdY = midY + (perpY / perpLength) * height;
 
-            const cp1x = v1.x + (thirdX - v1.x) * state.curveFactor;
-            const cp1y = v1.y + (thirdY - v1.y) * state.curveFactor;
-            const cp2x = v2.x + (thirdX - v2.x) * state.curveFactor;
-            const cp2y = v2.y + (thirdY - v2.y) * state.curveFactor;
+            const cp1x = v1.x + (thirdX - v1.x) * state.flowFactor;
+            const cp1y = v1.y + (thirdY - v1.y) * state.flowFactor;
+            const cp2x = v2.x + (thirdX - v2.x) * state.flowFactor;
+            const cp2y = v2.y + (thirdY - v2.y) * state.flowFactor;
 
             this.curves.push({
                 index: i,

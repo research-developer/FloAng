@@ -18,9 +18,9 @@ class ParameterSpaceExplorer {
             handleAngleMin = 10,
             handleAngleMax = 170,
             handleAngleStep = 5,
-            curveFactorMin = -3,
-            curveFactorMax = 1,
-            curveFactorStep = 0.1,
+            flowFactorMin = -3,
+            flowFactorMax = 1,
+            flowFactorStep = 0.1,
             rotation = 0,
             size = 600
         } = options;
@@ -30,19 +30,19 @@ class ParameterSpaceExplorer {
 
         console.log(`🔍 Exploring parameter space for n=${n}`);
         console.log(`Handle Angle: ${handleAngleMin}° to ${handleAngleMax}° (step: ${handleAngleStep}°)`);
-        console.log(`Curve Factor: ${curveFactorMin} to ${curveFactorMax} (step: ${curveFactorStep})`);
+        console.log(`Curve Factor: ${flowFactorMin} to ${flowFactorMax} (step: ${flowFactorStep})`);
 
         let sampleCount = 0;
 
         // Iterate through parameter combinations
         for (let handleAngle = handleAngleMin; handleAngle <= handleAngleMax; handleAngle += handleAngleStep) {
-            for (let curveFactor = curveFactorMin; curveFactor <= curveFactorMax; curveFactor += curveFactorStep) {
+            for (let flowFactor = flowFactorMin; flowFactor <= flowFactorMax; flowFactor += flowFactorStep) {
                 sampleCount++;
 
                 const state = {
                     sides: n,
                     handleAngle: handleAngle,
-                    curveFactor: parseFloat(curveFactor.toFixed(2)),
+                    flowFactor: parseFloat(flowFactor.toFixed(2)),
                     rotation: rotation,
                     showGuides: false
                 };
@@ -247,7 +247,7 @@ class ParameterSpaceExplorer {
         }
 
         // Degenerate if extreme curve factor causes infinite folding
-        if (state.curveFactor < -2.5 && metrics.intersectionCount > state.sides * 3) {
+        if (state.flowFactor < -2.5 && metrics.intersectionCount > state.sides * 3) {
             metrics.degenerateReason = 'infinite_folding';
             return true;
         }
@@ -478,7 +478,7 @@ class ParameterSpaceExplorer {
             if (config) {
                 const m = config.metrics;
                 report += `  ${type}:\n`;
-                report += `    HandleAngle: ${config.state.handleAngle}°, CurveFactor: ${config.state.curveFactor}\n`;
+                report += `    HandleAngle: ${config.state.handleAngle}°, CurveFactor: ${config.state.flowFactor}\n`;
                 report += `    Complexity: ${m.complexityScore.toFixed(3)}, Simplicity: ${m.simplicityScore.toFixed(3)}\n`;
                 report += `    Center: ${m.centerDominance.toFixed(3)}, Roundness: ${m.roundness.toFixed(3)}\n\n`;
             }
@@ -489,7 +489,7 @@ class ParameterSpaceExplorer {
             report += `  ${archetype}: ${configs.length} configurations\n`;
             if (configs.length > 0) {
                 const top = configs[0];
-                report += `    Top: HandleAngle=${top.state.handleAngle}°, CurveFactor=${top.state.curveFactor}\n`;
+                report += `    Top: HandleAngle=${top.state.handleAngle}°, CurveFactor=${top.state.flowFactor}\n`;
             }
         });
 
