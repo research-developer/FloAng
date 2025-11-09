@@ -1,6 +1,6 @@
-# 🔷 svGen - Algorithmic SVG Generator
+# 🌊 Floan - Flowangle Studio & SVG Generator
 
-A Python framework for creating geometrically precise, fractal-friendly, and algorithmically-generated SVG graphics.
+A geometric pattern generator and interactive studio for creating flowangles and other algorithmically-generated SVG graphics.
 
 ## ✨ Features
 
@@ -41,7 +41,7 @@ python my_pattern.py
 ## 📁 Project Structure
 
 ```
-svGen/
+floan/
 ├── src/                    # Core library
 │   └── svg_generator.py    # Point, SVGCanvas, primitives
 ├── examples/               # Built-in examples
