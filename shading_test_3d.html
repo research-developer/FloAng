@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowAngle 3D Depth Shading Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(90deg, #16213e 0%, #0f3460 100%);
+            border-bottom: 2px solid #533483;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: #e94560;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(233, 69, 96, 0.5);
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        #controls-panel {
+            background: #16213e;
+            border-bottom: 2px solid #533483;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            border: 2px solid #533483;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            color: #e94560;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #533483;
+            padding-bottom: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: linear-gradient(90deg, #533483 0%, #e94560 100%);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.6);
+            border: 2px solid #fff;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.6);
+            border: 2px solid #fff;
+        }
+
+        .control-value {
+            font-size: 14px;
+            color: #e94560;
+            font-family: 'Monaco', monospace;
+            min-width: 60px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        button {
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #533483 0%, #e94560 100%);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a1a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #svg-preview {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #svg-preview svg {
+            max-width: 90%;
+            max-height: 90%;
+            filter: drop-shadow(0 10px 40px rgba(0, 0, 0, 0.8));
+        }
+
+        .light-indicator {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #fff 0%, #e94560 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 0.3s;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.8);
+            opacity: 0.6;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #0f3460;
+            color: #e0e0e0;
+            border: 2px solid #533483;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:focus {
+            border-color: #e94560;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+            border: 2px solid #533483;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 11px;
+            color: #a0a0a0;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #e94560;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 2px solid #533483;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #e94560;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-label {
+            font-size: 13px;
+            color: #e0e0e0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🌊 FlowAngle 3D Depth Shading Explorer</h1>
+        <p class="subtitle">Simulated 3D lighting and depth effects for FlowAngle curves</p>
+    </header>
+
+    <div id="controls-panel">
+        <!-- Shape Parameters -->
+        <div class="control-section">
+            <div class="section-title">Shape Parameters</div>
+            <div class="control-group">
+                <label class="control-label">Sides (n)</label>
+                <div class="control-row">
+                    <input type="range" id="sides" min="3" max="12" value="3" oninput="updatePreview()">
+                    <span class="control-value" id="sides-value">3</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Curve Factor</label>
+                <div class="control-row">
+                    <input type="range" id="curve-factor" min="-3" max="1" step="0.01" value="-0.66" oninput="updatePreview()">
+                    <span class="control-value" id="curve-value">-0.66</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Handle Angle</label>
+                <div class="control-row">
+                    <input type="range" id="handle-angle" min="10" max="170" value="60" oninput="updatePreview()">
+                    <span class="control-value" id="handle-angle-value">60°</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Rotation</label>
+                <div class="control-row">
+                    <input type="range" id="rotation" min="0" max="360" value="0" oninput="updatePreview()">
+                    <span class="control-value" id="rotation-value">0°</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lighting Controls -->
+        <div class="control-section">
+            <div class="section-title">⚡ Lighting Controls</div>
+            <div class="control-group">
+                <label class="control-label">Light Position</label>
+                <select id="light-position" onchange="updatePreview()">
+                    <option value="top-left">Top Left</option>
+                    <option value="top-center" selected>Top Center</option>
+                    <option value="top-right">Top Right</option>
+                    <option value="center-left">Center Left</option>
+                    <option value="center">Center</option>
+                    <option value="center-right">Center Right</option>
+                    <option value="bottom-left">Bottom Left</option>
+                    <option value="bottom-center">Bottom Center</option>
+                    <option value="bottom-right">Bottom Right</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Light Intensity</label>
+                <div class="control-row">
+                    <input type="range" id="light-intensity" min="0" max="2" step="0.1" value="1.0" oninput="updatePreview()">
+                    <span class="control-value" id="intensity-value">1.0</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Light Elevation (Z)</label>
+                <div class="control-row">
+                    <input type="range" id="light-elevation" min="0" max="500" value="200" oninput="updatePreview()">
+                    <span class="control-value" id="elevation-value">200</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Ambient Light</label>
+                <div class="control-row">
+                    <input type="range" id="ambient-light" min="0" max="1" step="0.05" value="0.3" oninput="updatePreview()">
+                    <span class="control-value" id="ambient-value">0.30</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Depth & Material -->
+        <div class="control-section">
+            <div class="section-title">🎨 Depth & Material</div>
+            <div class="control-group">
+                <label class="control-label">Depth Amount</label>
+                <div class="control-row">
+                    <input type="range" id="depth-amount" min="0" max="100" value="30" oninput="updatePreview()">
+                    <span class="control-value" id="depth-value">30</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Specularity</label>
+                <div class="control-row">
+                    <input type="range" id="specularity" min="0" max="1" step="0.05" value="0.5" oninput="updatePreview()">
+                    <span class="control-value" id="spec-value">0.50</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Shininess</label>
+                <div class="control-row">
+                    <input type="range" id="shininess" min="1" max="50" value="10" oninput="updatePreview()">
+                    <span class="control-value" id="shine-value">10</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Effect Mode</label>
+                <select id="effect-mode" onchange="updatePreview()">
+                    <option value="embossed" selected>Embossed (Raised)</option>
+                    <option value="debossed">Debossed (Recessed)</option>
+                    <option value="beveled">Beveled Edge</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Colors & Style -->
+        <div class="control-section">
+            <div class="section-title">🎨 Colors & Style</div>
+            <div class="control-group">
+                <label class="control-label">Base Color</label>
+                <input type="color" id="base-color" value="#87ceeb" oninput="updatePreview()">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Highlight Color</label>
+                <input type="color" id="highlight-color" value="#ffffff" oninput="updatePreview()">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Shadow Color</label>
+                <input type="color" id="shadow-color" value="#000080" oninput="updatePreview()">
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="show-normals" onchange="updatePreview()">
+                <label class="checkbox-label" for="show-normals">Show Surface Normals</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="show-light" onchange="updatePreview()">
+                <label class="checkbox-label" for="show-light">Show Light Position</label>
+            </div>
+        </div>
+
+        <!-- Presets -->
+        <div class="control-section">
+            <div class="section-title">✨ Quick Presets</div>
+            <div class="preset-buttons">
+                <button onclick="loadPreset('triquetra')">Triquetra</button>
+                <button onclick="loadPreset('flower')">Flower</button>
+                <button onclick="loadPreset('star')">Star</button>
+                <button onclick="loadPreset('smooth')">Smooth</button>
+                <button onclick="loadLightPreset('dramatic')">Dramatic Light</button>
+                <button onclick="loadLightPreset('soft')">Soft Light</button>
+                <button onclick="loadLightPreset('metallic')">Metallic</button>
+                <button onclick="loadLightPreset('stone')">Stone</button>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="control-section">
+            <div class="section-title">ℹ️ About</div>
+            <div class="info-box">
+                <p><strong>3D Depth Shading:</strong> This demo simulates 3D depth using calculated surface normals based on curve direction.</p>
+                <p style="margin-top: 8px;"><strong>How it works:</strong> Virtual light source position creates highlights on raised areas and shadows in recessed areas. Sharper handle angles = more dramatic lighting effects.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-area">
+        <div id="svg-preview"></div>
+        <div id="light-indicator" class="light-indicator" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Get light position in 3D space
+        function getLightPosition3D(size = 600) {
+            const position = document.getElementById('light-position').value;
+            const elevation = parseFloat(document.getElementById('light-elevation').value);
+
+            const positions = {
+                'top-left': { x: size * 0.2, y: size * 0.2 },
+                'top-center': { x: size * 0.5, y: size * 0.2 },
+                'top-right': { x: size * 0.8, y: size * 0.2 },
+                'center-left': { x: size * 0.2, y: size * 0.5 },
+                'center': { x: size * 0.5, y: size * 0.5 },
+                'center-right': { x: size * 0.8, y: size * 0.5 },
+                'bottom-left': { x: size * 0.2, y: size * 0.8 },
+                'bottom-center': { x: size * 0.5, y: size * 0.8 },
+                'bottom-right': { x: size * 0.8, y: size * 0.8 }
+            };
+
+            const pos2d = positions[position] || positions['top-center'];
+            return { x: pos2d.x, y: pos2d.y, z: elevation };
+        }
+
+        // Calculate surface normal at a point on the curve
+        function calculateSurfaceNormal(t, points, tangents) {
+            // Get tangent direction at this point
+            const tangent = tangents[Math.floor(t * (tangents.length - 1))];
+
+            // Normal is perpendicular to tangent
+            const normal = {
+                x: -tangent.y,
+                y: tangent.x
+            };
+
+            // Normalize the vector
+            const len = Math.sqrt(normal.x * normal.x + normal.y * normal.y);
+            if (len > 0) {
+                normal.x /= len;
+                normal.y /= len;
+            }
+
+            return normal;
+        }
+
+        // Calculate lighting at a point
+        function calculateLighting(point, normal, lightPos, intensity, ambient, spec, shine) {
+            // Vector from point to light
+            const toLight = {
+                x: lightPos.x - point.x,
+                y: lightPos.y - point.y,
+                z: lightPos.z
+            };
+
+            const distance = Math.sqrt(toLight.x * toLight.x + toLight.y * toLight.y + toLight.z * toLight.z);
+
+            // Normalize light direction
+            toLight.x /= distance;
+            toLight.y /= distance;
+            toLight.z /= distance;
+
+            // Surface normal in 3D (assume surface is at z=0, normal points up)
+            const depthAmount = parseFloat(document.getElementById('depth-amount').value);
+            const normal3d = {
+                x: normal.x,
+                y: normal.y,
+                z: depthAmount / 100.0  // Out of page
+            };
+
+            const normalLen = Math.sqrt(normal3d.x * normal3d.x + normal3d.y * normal3d.y + normal3d.z * normal3d.z);
+            normal3d.x /= normalLen;
+            normal3d.y /= normalLen;
+            normal3d.z /= normalLen;
+
+            // Diffuse lighting (Lambertian)
+            const diffuse = Math.max(0, normal3d.x * toLight.x + normal3d.y * toLight.y + normal3d.z * toLight.z);
+
+            // Specular lighting (Phong)
+            const viewDir = { x: 0, y: 0, z: 1 };  // Camera looks straight down
+            const dotNL = normal3d.x * toLight.x + normal3d.y * toLight.y + normal3d.z * toLight.z;
+            const reflect = {
+                x: 2 * dotNL * normal3d.x - toLight.x,
+                y: 2 * dotNL * normal3d.y - toLight.y,
+                z: 2 * dotNL * normal3d.z - toLight.z
+            };
+
+            const specular = Math.pow(Math.max(0, reflect.x * viewDir.x + reflect.y * viewDir.y + reflect.z * viewDir.z), shine);
+
+            // Combine lighting components
+            const totalLight = ambient + (diffuse * intensity) + (specular * spec * intensity);
+
+            return Math.max(0, Math.min(1, totalLight));
+        }
+
+        // Interpolate colors
+        function interpolateColor(color1, color2, factor) {
+            const c1 = hexToRgb(color1);
+            const c2 = hexToRgb(color2);
+
+            const r = Math.round(c1.r + (c2.r - c1.r) * factor);
+            const g = Math.round(c1.g + (c2.g - c1.g) * factor);
+            const b = Math.round(c1.b + (c2.b - c1.b) * factor);
+
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        // Generate FlowAngle with 3D shading
+        function generateFlowAngle3D(state, size = 600) {
+            const center = { x: size / 2, y: size / 2 };
+            const radius = size * 0.30;
+            const vertices = [];
+            const angleStep = (2 * Math.PI) / state.sides;
+            const rotRad = (state.rotation * Math.PI) / 180;
+
+            // Calculate vertices
+            for (let i = 0; i < state.sides; i++) {
+                const angle = rotRad + i * angleStep;
+                vertices.push({
+                    x: center.x + radius * Math.cos(angle),
+                    y: center.y + radius * Math.sin(angle)
+                });
+            }
+
+            // Get lighting parameters
+            const lightPos = getLightPosition3D(size);
+            const intensity = parseFloat(document.getElementById('light-intensity').value);
+            const ambient = parseFloat(document.getElementById('ambient-light').value);
+            const spec = parseFloat(document.getElementById('specularity').value);
+            const shine = parseFloat(document.getElementById('shininess').value);
+            const baseColor = document.getElementById('base-color').value;
+            const highlightColor = document.getElementById('highlight-color').value;
+            const shadowColor = document.getElementById('shadow-color').value;
+            const showNormals = document.getElementById('show-normals').checked;
+            const showLight = document.getElementById('show-light').checked;
+            const effectMode = document.getElementById('effect-mode').value;
+
+            // Update light indicator
+            const lightIndicator = document.getElementById('light-indicator');
+            if (showLight) {
+                lightIndicator.style.display = 'block';
+                lightIndicator.style.left = (lightPos.x / size * 100) + '%';
+                lightIndicator.style.top = (lightPos.y / size * 100) + '%';
+            } else {
+                lightIndicator.style.display = 'none';
+            }
+
+            // Build triangles and calculate tangents
+            const triangles = [];
+            const apexAngle = (state.handleAngle * Math.PI) / 180;
+
+            for (let i = 0; i < state.sides; i++) {
+                const v1 = vertices[i];
+                const v2 = vertices[(i + 1) % state.sides];
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                const dx = v2.x - v1.x;
+                const dy = v2.y - v1.y;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+                const perpX = dy;
+                const perpY = -dx;
+                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                const height = (baseLength / 2) / Math.tan(apexAngle / 2);
+                const thirdX = midX + (perpX / perpLength) * height;
+                const thirdY = midY + (perpY / perpLength) * height;
+
+                triangles.push({ v1, v2, third: { x: thirdX, y: thirdY } });
+            }
+
+            // Create gradient path with multiple segments for smooth shading
+            const segments = 50; // Segments per curve
+            let shapes = '';
+
+            // Calculate all points and tangents first
+            const allPoints = [];
+            const allTangents = [];
+
+            for (let i = 0; i < state.sides; i++) {
+                const tri = triangles[i];
+                const nextVertex = vertices[(i + 1) % state.sides];
+                const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.curveFactor;
+                const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.curveFactor;
+                const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.curveFactor;
+                const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.curveFactor;
+
+                for (let j = 0; j <= segments; j++) {
+                    const t = j / segments;
+
+                    // Cubic Bezier curve
+                    const mt = 1 - t;
+                    const mt2 = mt * mt;
+                    const mt3 = mt2 * mt;
+                    const t2 = t * t;
+                    const t3 = t2 * t;
+
+                    const x = mt3 * tri.v1.x + 3 * mt2 * t * cp1x + 3 * mt * t2 * cp2x + t3 * nextVertex.x;
+                    const y = mt3 * tri.v1.y + 3 * mt2 * t * cp1y + 3 * mt * t2 * cp2y + t3 * nextVertex.y;
+
+                    // Calculate tangent (derivative of bezier curve)
+                    const dx = 3 * mt2 * (cp1x - tri.v1.x) + 6 * mt * t * (cp2x - cp1x) + 3 * t2 * (nextVertex.x - cp2x);
+                    const dy = 3 * mt2 * (cp1y - tri.v1.y) + 6 * mt * t * (cp2y - cp1y) + 3 * t2 * (nextVertex.y - cp2y);
+
+                    const tangentLen = Math.sqrt(dx * dx + dy * dy);
+                    allPoints.push({ x, y });
+                    allTangents.push({
+                        x: tangentLen > 0 ? dx / tangentLen : 0,
+                        y: tangentLen > 0 ? dy / tangentLen : 0
+                    });
+                }
+            }
+
+            // Create gradient mesh using small segments
+            for (let i = 0; i < allPoints.length - 1; i++) {
+                const p1 = allPoints[i];
+                const p2 = allPoints[i + 1];
+                const t = i / allPoints.length;
+
+                // Calculate normal
+                const normal = calculateSurfaceNormal(t, allPoints, allTangents);
+
+                // Reverse normal for debossed effect
+                if (effectMode === 'debossed') {
+                    normal.x = -normal.x;
+                    normal.y = -normal.y;
+                }
+
+                // Calculate lighting
+                let lighting = calculateLighting(p1, normal, lightPos, intensity, ambient, spec, shine);
+
+                // For beveled effect, modulate lighting based on position
+                if (effectMode === 'beveled') {
+                    const edgeFactor = Math.abs(Math.sin(t * state.sides * Math.PI * 2)) * 0.5 + 0.5;
+                    lighting = lighting * 0.7 + edgeFactor * 0.3;
+                }
+
+                // Interpolate between shadow and highlight colors
+                let color;
+                if (lighting < 0.5) {
+                    color = interpolateColor(shadowColor, baseColor, lighting * 2);
+                } else {
+                    color = interpolateColor(baseColor, highlightColor, (lighting - 0.5) * 2);
+                }
+
+                // Draw segment
+                const width = 3;
+                shapes += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${width}" stroke-linecap="round"/>`;
+
+                // Show normals if enabled
+                if (showNormals && i % 5 === 0) {
+                    const normalLen = 20;
+                    const nx = p1.x + normal.x * normalLen;
+                    const ny = p1.y + normal.y * normalLen;
+                    shapes += `<line x1="${p1.x}" y1="${p1.y}" x2="${nx}" y2="${ny}" stroke="#ff00ff" stroke-width="1" opacity="0.6"/>`;
+                    shapes += `<circle cx="${nx}" cy="${ny}" r="2" fill="#ff00ff" opacity="0.8"/>`;
+                }
+            }
+
+            return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
+        }
+
+        function updatePreview() {
+            const state = {
+                sides: parseInt(document.getElementById('sides').value),
+                curveFactor: parseFloat(document.getElementById('curve-factor').value),
+                handleAngle: parseFloat(document.getElementById('handle-angle').value),
+                rotation: parseFloat(document.getElementById('rotation').value)
+            };
+
+            // Update value displays
+            document.getElementById('sides-value').textContent = state.sides;
+            document.getElementById('curve-value').textContent = state.curveFactor.toFixed(2);
+            document.getElementById('handle-angle-value').textContent = state.handleAngle + '°';
+            document.getElementById('rotation-value').textContent = state.rotation + '°';
+            document.getElementById('intensity-value').textContent = document.getElementById('light-intensity').value;
+            document.getElementById('elevation-value').textContent = document.getElementById('light-elevation').value;
+            document.getElementById('ambient-value').textContent = parseFloat(document.getElementById('ambient-light').value).toFixed(2);
+            document.getElementById('depth-value').textContent = document.getElementById('depth-amount').value;
+            document.getElementById('spec-value').textContent = parseFloat(document.getElementById('specularity').value).toFixed(2);
+            document.getElementById('shine-value').textContent = document.getElementById('shininess').value;
+
+            // Generate SVG
+            const svg = generateFlowAngle3D(state);
+            document.getElementById('svg-preview').innerHTML = svg;
+        }
+
+        function loadPreset(name) {
+            const presets = {
+                triquetra: { sides: 3, curveFactor: -0.66, handleAngle: 60, rotation: 0 },
+                flower: { sides: 6, curveFactor: -0.8, handleAngle: 30, rotation: 0 },
+                star: { sides: 5, curveFactor: -1.2, handleAngle: 36, rotation: 18 },
+                smooth: { sides: 8, curveFactor: -0.5, handleAngle: 22.5, rotation: 0 }
+            };
+
+            const preset = presets[name];
+            if (preset) {
+                document.getElementById('sides').value = preset.sides;
+                document.getElementById('curve-factor').value = preset.curveFactor;
+                document.getElementById('handle-angle').value = preset.handleAngle;
+                document.getElementById('rotation').value = preset.rotation;
+                updatePreview();
+            }
+        }
+
+        function loadLightPreset(name) {
+            const presets = {
+                dramatic: {
+                    position: 'top-left',
+                    intensity: 1.5,
+                    elevation: 150,
+                    ambient: 0.1,
+                    spec: 0.8,
+                    shine: 20,
+                    depth: 50
+                },
+                soft: {
+                    position: 'center',
+                    intensity: 0.8,
+                    elevation: 300,
+                    ambient: 0.5,
+                    spec: 0.2,
+                    shine: 5,
+                    depth: 20
+                },
+                metallic: {
+                    position: 'top-right',
+                    intensity: 1.2,
+                    elevation: 200,
+                    ambient: 0.2,
+                    spec: 1.0,
+                    shine: 30,
+                    depth: 40
+                },
+                stone: {
+                    position: 'top-center',
+                    intensity: 1.0,
+                    elevation: 250,
+                    ambient: 0.4,
+                    spec: 0.1,
+                    shine: 3,
+                    depth: 35
+                }
+            };
+
+            const preset = presets[name];
+            if (preset) {
+                document.getElementById('light-position').value = preset.position;
+                document.getElementById('light-intensity').value = preset.intensity;
+                document.getElementById('light-elevation').value = preset.elevation;
+                document.getElementById('ambient-light').value = preset.ambient;
+                document.getElementById('specularity').value = preset.spec;
+                document.getElementById('shininess').value = preset.shine;
+                document.getElementById('depth-amount').value = preset.depth;
+                updatePreview();
+            }
+        }
+
+        // Initialize
+        updatePreview();
+    </script>
+</body>
+</html>
