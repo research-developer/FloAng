@@ -366,25 +366,59 @@
 
     <!-- Timeline -->
     <div id="timeline">
-        <div id="timeline-header">
-            <span style="font-weight: bold; color: #6cf;">Keyframes</span>
-            <div class="animation-controls">
-                <div class="control-group">
-                    <label class="control-label">Frame Length</label>
-                    <input type="number" id="frame-length" min="1" max="30" value="5" style="width: 60px;">
-                    <span class="control-value"><span id="frame-length-value">5</span>s</span>
+        <!-- Tab Headers -->
+        <div id="timeline-tabs">
+            <button class="timeline-tab active" onclick="switchTimelineTab('keyframes')">
+                🎬 Keyframes
+            </button>
+            <button class="timeline-tab" onclick="switchTimelineTab('discoveries')">
+                ✨ Discoveries (n=<span id="discoveries-n-display">3</span>)
+            </button>
+        </div>
+
+        <!-- Keyframes Tab Content -->
+        <div id="keyframes-tab" class="timeline-tab-content active">
+            <div id="timeline-header">
+                <div class="animation-controls">
+                    <div class="control-group">
+                        <label class="control-label">Frame Length</label>
+                        <input type="number" id="frame-length" min="1" max="30" value="5" style="width: 60px;">
+                        <span class="control-value"><span id="frame-length-value">5</span>s</span>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Transition</label>
+                        <input type="number" id="transition-time" min="0" max="100" value="20" style="width: 60px;">
+                        <span class="control-value"><span id="transition-value">20</span>%</span>
+                    </div>
+                    <button id="play-btn" class="play-btn" onclick="togglePlay()">▶ Play</button>
+                    <button onclick="addKeyframe()">+ Add Keyframe</button>
                 </div>
-                <div class="control-group">
-                    <label class="control-label">Transition</label>
-                    <input type="number" id="transition-time" min="0" max="100" value="20" style="width: 60px;">
-                    <span class="control-value"><span id="transition-value">20</span>%</span>
-                </div>
-                <button id="play-btn" class="play-btn" onclick="togglePlay()">▶ Play</button>
-                <button onclick="addKeyframe()">+ Add Keyframe</button>
+            </div>
+            <div id="keyframes-container">
+                <!-- Keyframes will be added here -->
             </div>
         </div>
-        <div id="keyframes-container">
-            <!-- Keyframes will be added here -->
+
+        <!-- Discoveries Tab Content -->
+        <div id="discoveries-tab" class="timeline-tab-content">
+            <div id="timeline-header">
+                <div class="animation-controls" style="width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                        <span style="font-weight: bold; color: #6cf;">Notable Configurations for n=<span id="discoveries-n-value">3</span></span>
+                        <button onclick="refreshDiscoveries()" style="padding: 6px 12px; font-size: 11px;">
+                            🔄 Refresh
+                        </button>
+                        <div id="discoveries-status" style="color: #888; font-size: 11px; flex: 1; text-align: right;">
+                            Click a configuration to load it
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="discoveries-container" style="display: flex; gap: 10px; padding: 10px 20px; overflow-x: auto; align-items: center; flex: 1;">
+                <div style="width: 100%; text-align: center; color: #888; padding: 40px;">
+                    Loading discoveries...
+                </div>
+            </div>
         </div>
     </div>
 
@@ -411,6 +445,8 @@
         let currentDiscoveries = null;
         let currentConfigList = [];
         let currentConfigIndex = 0;
+        let discoveriesCache = new Map(); // Cache discoveries by n-value
+        let isExploringForDiscoveries = false;
 
         // Parameter mapping for constraint system
         const paramMap = {
@@ -1853,6 +1889,204 @@
                 notification.classList.remove('show');
             }, 3000);
         }
+
+        // ===== TIMELINE TAB FUNCTIONS =====
+
+        function switchTimelineTab(tabName) {
+            // Update tab buttons
+            const tabs = document.querySelectorAll('.timeline-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            const contents = document.querySelectorAll('.timeline-tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            if (tabName === 'keyframes') {
+                document.getElementById('keyframes-tab').classList.add('active');
+            } else if (tabName === 'discoveries') {
+                document.getElementById('discoveries-tab').classList.add('active');
+                // Auto-load discoveries if not already loaded
+                const currentN = parseInt(document.getElementById('sides').value);
+                if (!discoveriesCache.has(currentN)) {
+                    refreshDiscoveries();
+                }
+            }
+        }
+
+        async function refreshDiscoveries() {
+            if (isExploringForDiscoveries) return;
+
+            const currentN = parseInt(document.getElementById('sides').value);
+
+            // Update display
+            document.getElementById('discoveries-n-display').textContent = currentN;
+            document.getElementById('discoveries-n-value').textContent = currentN;
+
+            // Show loading state
+            const container = document.getElementById('discoveries-container');
+            container.innerHTML = '<div style="width: 100%; text-align: center; color: #6cf; padding: 40px;">🔍 Exploring parameter space for n=' + currentN + '...<br><span style="font-size: 11px; color: #888;">This may take 10-30 seconds</span></div>';
+
+            document.getElementById('discoveries-status').textContent = 'Exploring...';
+
+            isExploringForDiscoveries = true;
+
+            // Run exploration in background
+            setTimeout(async () => {
+                try {
+                    // Use coarse resolution for quick discoveries
+                    const discoveries = parameterExplorer.exploreParameterSpace(currentN, {
+                        handleAngleStep: 10,
+                        curveFactorStep: 0.2
+                    });
+
+                    // Cache results
+                    discoveriesCache.set(currentN, discoveries);
+
+                    // Display discoveries
+                    displayDiscoveries(discoveries);
+
+                    document.getElementById('discoveries-status').textContent = `Found ${getDiscoveriesCount(discoveries)} notable configurations`;
+
+                } catch (error) {
+                    console.error('Discovery exploration error:', error);
+                    container.innerHTML = '<div style="width: 100%; text-align: center; color: #c44; padding: 40px;">❌ Exploration failed<br><span style="font-size: 11px;">' + error.message + '</span></div>';
+                    document.getElementById('discoveries-status').textContent = 'Exploration failed';
+                } finally {
+                    isExploringForDiscoveries = false;
+                }
+            }, 100);
+        }
+
+        function getDiscoveriesCount(discoveries) {
+            let count = 0;
+            // Count extremes
+            Object.values(discoveries.extremes).forEach(config => {
+                if (config) count++;
+            });
+            // Count top archetype examples
+            Object.values(discoveries.archetypes).forEach(configs => {
+                if (configs.length > 0) count++;
+            });
+            return count;
+        }
+
+        function displayDiscoveries(discoveries) {
+            const container = document.getElementById('discoveries-container');
+            container.innerHTML = '';
+
+            const configurationsToShow = [];
+
+            // Add extremes (most important discoveries)
+            const extremeLabels = {
+                maxComplexity: '🌸 Max Complexity',
+                maxSimplicity: '🔲 Max Simplicity',
+                minCenterDominance: '🌺 Petal Dominant',
+                maxRoundness: '⚪ Round Transition'
+            };
+
+            Object.entries(extremeLabels).forEach(([key, label]) => {
+                const config = discoveries.extremes[key];
+                if (config) {
+                    configurationsToShow.push({
+                        config: config,
+                        label: label,
+                        type: 'extreme'
+                    });
+                }
+            });
+
+            // Add top from each archetype
+            const archetypeLabels = {
+                fractalBloom: '✨ Fractal Bloom',
+                gridAligned: '📐 Grid Aligned',
+                balanced: '⚖️ Balanced'
+            };
+
+            Object.entries(archetypeLabels).forEach(([archetype, label]) => {
+                const configs = discoveries.archetypes[archetype];
+                if (configs && configs.length > 0) {
+                    configurationsToShow.push({
+                        config: configs[0],
+                        label: label,
+                        type: 'archetype'
+                    });
+                }
+            });
+
+            // Create thumbnail cards
+            configurationsToShow.forEach((item, index) => {
+                const card = createDiscoveryCard(item.config, item.label, index);
+                container.appendChild(card);
+            });
+
+            if (configurationsToShow.length === 0) {
+                container.innerHTML = '<div style="width: 100%; text-align: center; color: #888; padding: 40px;">No notable configurations found</div>';
+            }
+        }
+
+        function createDiscoveryCard(config, label, index) {
+            const card = document.createElement('div');
+            card.className = 'keyframe';
+            card.style.cursor = 'pointer';
+            card.onclick = () => loadDiscoveryConfig(config);
+
+            // Generate thumbnail SVG
+            const thumbnailSVG = generateFlowAngle(config.state, 120);
+
+            const thumbnail = document.createElement('div');
+            thumbnail.className = 'keyframe-thumbnail';
+            thumbnail.innerHTML = thumbnailSVG;
+
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'keyframe-label';
+            labelDiv.innerHTML = `
+                <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">${label}</div>
+                <div style="font-size: 9px; color: #888;">
+                    a:${config.state.handleAngle}° c:${config.state.curveFactor.toFixed(1)}
+                </div>
+            `;
+
+            card.appendChild(thumbnail);
+            card.appendChild(labelDiv);
+
+            return card;
+        }
+
+        function loadDiscoveryConfig(config) {
+            const state = config.state;
+
+            // Apply state to UI
+            document.getElementById('sides').value = state.sides;
+            document.getElementById('curve-factor').value = state.curveFactor;
+            document.getElementById('handle-angle').value = state.handleAngle;
+            document.getElementById('rotation').value = state.rotation;
+
+            // Update preview
+            updatePreview();
+
+            // Show notification
+            showNotification(`Loaded: ${state.handleAngle}°, ${state.curveFactor}`, 'success');
+
+            // Switch back to keyframes tab to see the result
+            switchToKeyframesTab();
+        }
+
+        function switchToKeyframesTab() {
+            const tabs = document.querySelectorAll('.timeline-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabs[0].classList.add('active');
+
+            document.getElementById('keyframes-tab').classList.add('active');
+            document.getElementById('discoveries-tab').classList.remove('active');
+        }
+
+        // Update n-display when sides slider changes
+        document.getElementById('sides').addEventListener('input', function() {
+            const n = this.value;
+            document.getElementById('discoveries-n-display').textContent = n;
+            document.getElementById('discoveries-n-value').textContent = n;
+        });
     </script>
 </body>
 </html>
