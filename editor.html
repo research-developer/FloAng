@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>svGen Interactive Editor</title>
+    <title>FloAng Interactive Editor</title>
     <style>
         * {
             margin: 0;
@@ -12,41 +12,39 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #0f0f0f;
-            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #1a1a2a;
+            color: #ffffff;
             display: flex;
+            flex-direction: column;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* Left Panel - Controls */
-        #controls-panel {
-            width: 400px;
-            background: #1a1a1a;
-            border-right: 2px solid #333;
-            overflow-y: auto;
+        header {
+            background: #2a2a3a;
             padding: 20px;
+            border-bottom: 2px solid #3a3a4a;
         }
 
-        /* Right Panel - Preview */
-        #preview-panel {
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .container {
+            display: flex;
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #151515;
+            overflow: hidden;
         }
 
-        #preview-header {
-            padding: 15px 20px;
-            background: #1a1a1a;
-            border-bottom: 2px solid #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        #preview-canvas {
+        .canvas-area {
             flex: 1;
             display: flex;
             align-items: center;
@@ -54,770 +52,550 @@
             padding: 20px;
         }
 
-        h1 {
-            color: #6cf;
-            font-size: 24px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        h2 {
-            color: #8df;
-            font-size: 18px;
-            margin: 20px 0 10px 0;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #333;
-        }
-
-        /* Widget Styles */
-        .widget {
-            background: #242424;
-            border: 2px solid #333;
+        canvas {
+            border: 2px solid #3a3a4a;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 12px;
-            transition: all 0.2s ease;
+            background: #ffffff;
+            cursor: crosshair;
         }
 
-        .widget:hover {
-            border-color: #6cf;
-            box-shadow: 0 0 10px rgba(102, 204, 255, 0.1);
+        .sidebar {
+            width: 320px;
+            background: #2a2a3a;
+            border-left: 2px solid #3a3a4a;
+            padding: 20px;
+            overflow-y: auto;
         }
 
-        .widget-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #00ffcc;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .widget-value {
-            color: #6cf;
-            font-family: 'Monaco', 'Courier New', monospace;
+        .control {
+            margin-bottom: 15px;
+        }
+
+        .control label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: #ccc;
+        }
+
+        input[type="number"],
+        input[type="color"],
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #1a1a2a;
+            border: 1px solid #3a3a4a;
+            border-radius: 4px;
+            color: #fff;
             font-size: 13px;
         }
 
-        /* Slider Widget */
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            background: #333;
-            border-radius: 3px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
+        input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            background: #6cf;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-            background: #8df;
-            transform: scale(1.2);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            background: #6cf;
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-        }
-
-        /* Color Picker Widget */
-        input[type="color"] {
-            width: 100%;
-            height: 40px;
-            border: 2px solid #333;
-            border-radius: 4px;
-            background: #1a1a1a;
             cursor: pointer;
         }
 
-        input[type="color"]:hover {
-            border-color: #6cf;
-        }
-
-        /* Dropdown Widget */
-        select {
-            width: 100%;
-            padding: 10px;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            border: 2px solid #333;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            outline: none;
-        }
-
-        select:hover {
-            border-color: #6cf;
-        }
-
-        select:focus {
-            border-color: #6cf;
-        }
-
-        /* Checkbox Widget */
-        .checkbox-widget {
+        .checkbox-control {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+        .checkbox-control label {
+            margin: 0;
             cursor: pointer;
-            accent-color: #6cf;
         }
 
-        /* Number Input Widget */
-        input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            border: 2px solid #333;
-            border-radius: 4px;
-            font-size: 14px;
-            outline: none;
-        }
-
-        input[type="number"]:hover {
-            border-color: #6cf;
-        }
-
-        input[type="number"]:focus {
-            border-color: #6cf;
-        }
-
-        /* Button */
         button {
-            padding: 12px 20px;
-            background: #6cf;
-            color: #000;
+            width: 100%;
+            padding: 12px;
+            background: #00ffcc;
+            color: #1a1a2a;
             border: none;
             border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            width: 100%;
             font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: background 0.2s;
         }
 
         button:hover {
-            background: #8df;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 204, 255, 0.3);
+            background: #00ddaa;
         }
 
-        button:active {
-            transform: translateY(0);
+        button.secondary {
+            background: #4a4a5a;
+            color: #fff;
         }
 
-        /* SVG Preview */
-        #svg-preview {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        button.secondary:hover {
+            background: #5a5a6a;
         }
 
-        /* Preset Buttons */
-        .preset-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .preset-btn {
-            padding: 8px 12px;
-            background: #2a2a2a;
-            color: #6cf;
-            border: 2px solid #333;
+        .info {
+            background: #3a3a4a;
+            padding: 12px;
             border-radius: 4px;
             font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .preset-btn:hover {
-            background: #333;
-            border-color: #6cf;
-        }
-
-        /* Code Export */
-        #code-output {
-            background: #1a1a1a;
-            border: 2px solid #333;
-            border-radius: 4px;
-            padding: 12px;
-            font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 11px;
-            color: #8df;
-            max-height: 150px;
-            overflow-y: auto;
+            color: #aaa;
             margin-top: 10px;
         }
 
-        .section {
-            margin-bottom: 24px;
+        .handle-info {
+            font-size: 11px;
+            color: #888;
+            margin-top: 15px;
+            padding: 10px;
+            background: #1a1a2a;
+            border-radius: 4px;
+        }
+
+        .handle-info strong {
+            color: #00ffcc;
+        }
+
+        .code-output {
+            background: #1a1a2a;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #00ffcc;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
-    <!-- Left Panel: Controls -->
-    <div id="controls-panel">
-        <h1>🎨 Interactive Editor</h1>
+    <header>
+        <h1>FloAng Interactive Editor</h1>
+        <p class="subtitle">Drag the control handles to adjust the bezier curves</p>
+    </header>
 
-        <!-- Presets -->
-        <div class="section">
-            <h2>Quick Presets</h2>
-            <div class="preset-buttons">
-                <button class="preset-btn" onclick="loadPreset('triangle')">Triangle</button>
-                <button class="preset-btn" onclick="loadPreset('mandala')">Mandala</button>
-                <button class="preset-btn" onclick="loadPreset('spiral')">Spiral</button>
-                <button class="preset-btn" onclick="loadPreset('fractal')">Fractal</button>
-            </div>
+    <div class="container">
+        <div class="canvas-area">
+            <canvas id="canvas" width="800" height="800"></canvas>
         </div>
 
-        <!-- Shape Selection -->
-        <div class="section">
-            <h2>Shape Type</h2>
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Pattern</span>
+        <div class="sidebar">
+            <div class="control-group">
+                <h3>Display Options</h3>
+
+                <div class="checkbox-control">
+                    <input type="checkbox" id="showTriangle" checked>
+                    <label for="showTriangle">Show Reference Triangle</label>
                 </div>
-                <select id="pattern-type" onchange="updatePreview()">
-                    <option value="flowangle">FlowAngle (Curved)</option>
-                    <option value="polygon">Regular Polygon</option>
-                    <option value="triangle">Triangle</option>
-                    <option value="circle">Circle</option>
-                    <option value="spiral">Spiral</option>
-                    <option value="mandala">Mandala</option>
-                    <option value="fractal">Fractal Circles</option>
-                </select>
-            </div>
-        </div>
 
-        <!-- Geometry Parameters -->
-        <div class="section">
-            <h2>Geometry</h2>
-
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Size</span>
-                    <span class="widget-value" id="size-value">150</span>
+                <div class="checkbox-control">
+                    <input type="checkbox" id="showHandles" checked>
+                    <label for="showHandles">Show Control Handles</label>
                 </div>
-                <input type="range" id="size" min="20" max="300" value="150" oninput="updatePreview()">
-            </div>
 
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Sides / Count</span>
-                    <span class="widget-value" id="sides-value">3</span>
+                <div class="checkbox-control">
+                    <input type="checkbox" id="showCenter" checked>
+                    <label for="showCenter">Show Center Point</label>
                 </div>
-                <input type="range" id="sides" min="1" max="12" value="3" oninput="updatePreview()">
-            </div>
 
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Rotation (°)</span>
-                    <span class="widget-value" id="rotation-value">0</span>
-                </div>
-                <input type="range" id="rotation" min="0" max="360" value="0" oninput="updatePreview()">
-            </div>
-
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Recursion Depth</span>
-                    <span class="widget-value" id="depth-value">3</span>
-                </div>
-                <input type="range" id="depth" min="1" max="6" value="3" oninput="updatePreview()">
-            </div>
-
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Curve Factor</span>
-                    <span class="widget-value" id="curve-value">-0.66</span>
-                </div>
-                <input type="range" id="curve-factor" min="-1" max="1" step="0.01" value="-0.66" oninput="updatePreview()">
-            </div>
-
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Handle Angle (°)</span>
-                    <span class="widget-value" id="handle-angle-value">60</span>
-                </div>
-                <input type="range" id="handle-angle" min="10" max="170" step="1" value="60" oninput="updatePreview()">
-            </div>
-
-            <div class="widget">
-                <div class="checkbox-widget">
-                    <input type="checkbox" id="show-guides" onchange="updatePreview()">
-                    <span>Show Triangle Guides</span>
+                <div class="checkbox-control">
+                    <input type="checkbox" id="coloredLobes">
+                    <label for="coloredLobes">Color Each Lobe</label>
                 </div>
             </div>
-        </div>
 
-        <!-- Style Parameters -->
-        <div class="section">
-            <h2>Style</h2>
+            <div class="control-group">
+                <h3>FloAng Parameters</h3>
 
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Fill Color</span>
-                    <span class="widget-value" id="fill-value">#87CEEB</span>
+                <div class="control">
+                    <label>Handle Distance: <span id="distanceValue">0.50</span></label>
+                    <input type="range" id="handleDistance" min="0" max="1.5" step="0.01" value="0.5">
                 </div>
-                <input type="color" id="fill-color" value="#87CEEB" oninput="updatePreview()">
-            </div>
 
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Stroke Color</span>
-                    <span class="widget-value" id="stroke-value">#000080</span>
+                <div class="control">
+                    <label>Handle Position: <span id="positionValue">0.33</span></label>
+                    <input type="range" id="handlePosition" min="0" max="0.5" step="0.01" value="0.33">
                 </div>
-                <input type="color" id="stroke-color" value="#000080" oninput="updatePreview()">
+
+                <button onclick="recalculateHandles()" class="secondary">Apply Parameters</button>
             </div>
 
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Stroke Width</span>
-                    <span class="widget-value" id="stroke-width-value">2</span>
+            <div class="control-group">
+                <h3>Style</h3>
+
+                <div class="control">
+                    <label>Lobe Stroke Width</label>
+                    <input type="number" id="strokeWidth" min="1" max="20" value="8">
                 </div>
-                <input type="range" id="stroke-width" min="0.5" max="10" step="0.5" value="2" oninput="updatePreview()">
-            </div>
 
-            <div class="widget">
-                <div class="widget-label">
-                    <span>Opacity</span>
-                    <span class="widget-value" id="opacity-value">1.0</span>
+                <div class="control">
+                    <label>Lobe Color</label>
+                    <input type="color" id="lobeColor" value="#000000">
                 </div>
-                <input type="range" id="opacity" min="0" max="1" step="0.1" value="1" oninput="updatePreview()">
             </div>
-        </div>
 
-        <!-- Actions -->
-        <div class="section">
-            <h2>Export</h2>
-            <button onclick="downloadSVG()">💾 Download SVG</button>
-            <button onclick="copyCode()" style="margin-top: 8px;">📋 Copy Python Code</button>
-            <div id="code-output"></div>
-        </div>
-    </div>
-
-    <!-- Right Panel: Preview -->
-    <div id="preview-panel">
-        <div id="preview-header">
-            <h1>Live Preview</h1>
-            <div>
-                <span style="font-size: 14px; color: #888;">Canvas: </span>
-                <span style="font-size: 14px; color: #6cf;" id="canvas-size">600×600</span>
+            <div class="control-group">
+                <h3>Export</h3>
+                <button onclick="exportSVG()">Download SVG</button>
+                <button onclick="copyControlPoints()" class="secondary">Copy Control Points</button>
+                <button onclick="resetToDefault()" class="secondary">Reset to Default</button>
             </div>
-        </div>
-        <div id="preview-canvas">
-            <div id="svg-preview"></div>
+
+            <div class="handle-info">
+                <strong>Instructions:</strong><br>
+                • Click and drag the blue control handles<br>
+                • Red dots are triangle vertices (fixed)<br>
+                • Each lobe has 2 control points<br>
+                • Control points affect curve shape
+            </div>
+
+            <div id="coordsOutput" class="code-output"></div>
         </div>
     </div>
 
     <script>
-        // Test function to verify triangle geometry
-        function testTriangleGeometry(sides, radius, rotation) {
-            console.log(`\n=== Testing FlowAngle Geometry for n=${sides} ===`);
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
 
-            // Calculate vertices
-            const vertices = [];
-            const angleStep = (2 * Math.PI) / sides;
-            for (let i = 0; i < sides; i++) {
-                const angle = rotation + i * angleStep;
-                const x = 300 + radius * Math.cos(angle);
-                const y = 300 + radius * Math.sin(angle);
-                vertices.push({ x, y });
-            }
+        // Canvas center
+        const CENTER = { x: 400, y: 400 };
+        const SIZE = 250;
 
-            // Calculate triangle apexes
-            const apexAngle = Math.PI / sides;
-            const apexPoints = [];
+        // Triangle vertices (fixed)
+        const vertices = [
+            { x: CENTER.x, y: CENTER.y - SIZE },  // Top
+            { x: CENTER.x - SIZE * Math.cos(Math.PI / 6), y: CENTER.y + SIZE * Math.sin(Math.PI / 6) },  // Bottom-left
+            { x: CENTER.x + SIZE * Math.cos(Math.PI / 6), y: CENTER.y + SIZE * Math.sin(Math.PI / 6) }   // Bottom-right
+        ];
 
-            for (let i = 0; i < sides; i++) {
+        // Calculate initial control points based on parameters
+        function calculateControlPoints(handleDistance, handlePosition) {
+            const lobes = [];
+
+            for (let i = 0; i < 3; i++) {
                 const v1 = vertices[i];
-                const v2 = vertices[(i + 1) % sides];
-                const midX = (v1.x + v2.x) / 2;
-                const midY = (v1.y + v2.y) / 2;
-                const dx = v2.x - v1.x;
-                const dy = v2.y - v1.y;
-                const baseLength = Math.sqrt(dx * dx + dy * dy);
-                const perpX = dy;
-                const perpY = -dx;
-                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
-                const height = (baseLength / 2) / Math.tan(apexAngle / 2);
-                const thirdX = midX + (perpX / perpLength) * height;
-                const thirdY = midY + (perpY / perpLength) * height;
+                const v2 = vertices[(i + 1) % 3];
 
-                apexPoints.push({ x: thirdX, y: thirdY });
-
-                // Calculate triangle side lengths
-                const side1 = Math.sqrt((thirdX - v1.x)**2 + (thirdY - v1.y)**2);
-                const side2 = Math.sqrt((thirdX - v2.x)**2 + (thirdY - v2.y)**2);
-                const base = baseLength;
-
-                console.log(`Triangle ${i}:`);
-                console.log(`  Apex: (${thirdX.toFixed(1)}, ${thirdY.toFixed(1)})`);
-                console.log(`  Side 1: ${side1.toFixed(2)}, Side 2: ${side2.toFixed(2)}, Base: ${base.toFixed(2)}`);
-
-                if (sides === 3) {
-                    const isEquilateral = Math.abs(side1 - side2) < 0.01 && Math.abs(side1 - base) < 0.01;
-                    console.log(`  Equilateral: ${isEquilateral ? 'YES ✓' : 'NO ✗'}`);
-                }
-            }
-
-            // For n=3, check if all apexes converge to same point (center)
-            if (sides === 3) {
-                console.log('\nApex convergence test:');
-                const avgX = apexPoints.reduce((sum, p) => sum + p.x, 0) / apexPoints.length;
-                const avgY = apexPoints.reduce((sum, p) => sum + p.y, 0) / apexPoints.length;
-                console.log(`  Average apex: (${avgX.toFixed(1)}, ${avgY.toFixed(1)})`);
-                console.log(`  Expected center: (300, 300)`);
-                const convergesToCenter = Math.abs(avgX - 300) < 1 && Math.abs(avgY - 300) < 1;
-                console.log(`  Converges to center: ${convergesToCenter ? 'YES ✓' : 'NO ✗'}`);
-            }
-        }
-
-        // Initialize
-        updatePreview();
-
-        function updatePreview() {
-            // Get all values
-            const pattern = document.getElementById('pattern-type').value;
-            const size = parseFloat(document.getElementById('size').value);
-            const sides = parseInt(document.getElementById('sides').value);
-            const rotation = parseFloat(document.getElementById('rotation').value);
-            const depth = parseInt(document.getElementById('depth').value);
-            const curveFactor = parseFloat(document.getElementById('curve-factor').value);
-            const handleAngle = parseFloat(document.getElementById('handle-angle').value);
-            const showGuides = document.getElementById('show-guides').checked;
-            const fillColor = document.getElementById('fill-color').value;
-            const strokeColor = document.getElementById('stroke-color').value;
-            const strokeWidth = parseFloat(document.getElementById('stroke-width').value);
-            const opacity = parseFloat(document.getElementById('opacity').value);
-
-            // Adjust curve factor range based on n (more negative as n increases)
-            const curveSlider = document.getElementById('curve-factor');
-            const minCurve = -2.0 * sides; // Proportional to n (more negative as n increases)
-            curveSlider.min = minCurve;
-
-            // Clamp current value if it's below new minimum
-            if (curveFactor < minCurve) {
-                curveSlider.value = minCurve;
-            }
-
-            // Update value displays
-            document.getElementById('size-value').textContent = size;
-            document.getElementById('sides-value').textContent = sides;
-            document.getElementById('rotation-value').textContent = rotation;
-            document.getElementById('depth-value').textContent = depth;
-            document.getElementById('curve-value').textContent = parseFloat(curveSlider.value).toFixed(2);
-            document.getElementById('handle-angle-value').textContent = handleAngle;
-            document.getElementById('fill-value').textContent = fillColor;
-            document.getElementById('stroke-value').textContent = strokeColor;
-            document.getElementById('stroke-width-value').textContent = strokeWidth;
-            document.getElementById('opacity-value').textContent = opacity.toFixed(1);
-
-            // Generate SVG
-            const svg = generateSVG(pattern, size, sides, rotation, depth, parseFloat(curveSlider.value), handleAngle, showGuides, fillColor, strokeColor, strokeWidth, opacity);
-            document.getElementById('svg-preview').innerHTML = svg;
-
-            // Update code output
-            updateCodeOutput(pattern, size, sides, rotation, depth, fillColor, strokeColor, strokeWidth, opacity);
-        }
-
-        function generateSVG(pattern, size, sides, rotation, depth, curveFactor, handleAngle, showGuides, fill, stroke, strokeWidth, opacity) {
-            const canvas = 600;
-            const center = { x: canvas / 2, y: canvas / 2 };
-            let shapes = '';
-
-            const rotRad = (rotation * Math.PI) / 180;
-
-            if (pattern === 'flowangle') {
-                shapes = drawFlowAngle(center, size, sides, rotRad, curveFactor, handleAngle, showGuides, fill, stroke, strokeWidth, opacity);
-            } else if (pattern === 'polygon') {
-                shapes = drawPolygon(center, size, sides, rotRad, fill, stroke, strokeWidth, opacity);
-            } else if (pattern === 'triangle') {
-                shapes = drawPolygon(center, size, 3, -Math.PI / 2, fill, stroke, strokeWidth, opacity);
-            } else if (pattern === 'circle') {
-                shapes = `<circle cx="${center.x}" cy="${center.y}" r="${size}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
-            } else if (pattern === 'spiral') {
-                shapes = drawSpiral(center, size, sides, rotRad, fill, stroke, strokeWidth, opacity);
-            } else if (pattern === 'mandala') {
-                shapes = drawMandala(center, size, sides, depth, fill, stroke, strokeWidth, opacity);
-            } else if (pattern === 'fractal') {
-                shapes = drawFractalCircles(center, size, depth, fill, stroke, strokeWidth, opacity);
-            }
-
-            return `<svg width="${canvas}" height="${canvas}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
-        }
-
-        function drawPolygon(center, radius, sides, rotation, fill, stroke, strokeWidth, opacity) {
-            const points = [];
-            const angleStep = (2 * Math.PI) / sides;
-
-            for (let i = 0; i < sides; i++) {
-                const angle = rotation + i * angleStep;
-                const x = center.x + radius * Math.cos(angle);
-                const y = center.y + radius * Math.sin(angle);
-                points.push(`${x},${y}`);
-            }
-
-            return `<polygon points="${points.join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
-        }
-
-        function drawFlowAngle(center, radius, sides, rotation, curveFactor, handleAngle, showGuides, fill, stroke, strokeWidth, opacity) {
-            // Special case for n=1: just a circle
-            if (sides === 1) {
-                return `<circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
-            }
-
-            // Calculate polygon vertices
-            const vertices = [];
-            const angleStep = (2 * Math.PI) / sides;
-
-            for (let i = 0; i < sides; i++) {
-                const angle = rotation + i * angleStep;
-                const x = center.x + radius * Math.cos(angle);
-                const y = center.y + radius * Math.sin(angle);
-                vertices.push({ x, y });
-            }
-
-            let shapes = '';
-
-            // Special case for n=2: just a curved path between two points
-            if (sides === 2) {
-                const v1 = vertices[0];
-                const v2 = vertices[1];
+                // Midpoint of edge
                 const midX = (v1.x + v2.x) / 2;
                 const midY = (v1.y + v2.y) / 2;
 
-                // Perpendicular offset for curve
-                const dx = v2.x - v1.x;
-                const dy = v2.y - v1.y;
-                const perpX = dy;
-                const perpY = -dx;
-                const baseLength = Math.sqrt(dx * dx + dy * dy);
-                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+                // Vector from center to midpoint (outward)
+                let outwardX = midX - CENTER.x;
+                let outwardY = midY - CENTER.y;
+                const outwardLen = Math.sqrt(outwardX * outwardX + outwardY * outwardY);
+                outwardX /= outwardLen;
+                outwardY /= outwardLen;
 
-                // Control points perpendicular to the line
-                const offset = (baseLength / 2) * curveFactor;
-                const cpX = midX + (perpX / perpLength) * offset;
-                const cpY = midY + (perpY / perpLength) * offset;
+                // Handle offset (INWARD = negative)
+                const offset = -handleDistance * SIZE;
 
-                if (showGuides) {
-                    shapes += `<circle cx="${cpX}" cy="${cpY}" r="3" fill="#f66" opacity="0.6"/>`;
-                    shapes += `<line x1="${midX}" y1="${midY}" x2="${cpX}" y2="${cpY}" stroke="#f66" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
-                }
+                // Control point 1 (at handlePosition along edge)
+                const t1 = handlePosition;
+                const edge1X = v1.x + (v2.x - v1.x) * t1;
+                const edge1Y = v1.y + (v2.y - v1.y) * t1;
 
-                shapes += `<path d="M ${v1.x} ${v1.y} Q ${cpX} ${cpY}, ${v2.x} ${v2.y}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
-                return shapes;
-            }
+                const c1x = edge1X + outwardX * offset;
+                const c1y = edge1Y + outwardY * offset;
 
-            // For each edge, create isosceles triangle with user-controlled apex angle
-            const triangles = [];
-            const apexAngle = (handleAngle * Math.PI) / 180; // Convert degrees to radians
+                // Control point 2 (at 1-handlePosition along edge)
+                const t2 = 1 - handlePosition;
+                const edge2X = v1.x + (v2.x - v1.x) * t2;
+                const edge2Y = v1.y + (v2.y - v1.y) * t2;
 
-            for (let i = 0; i < sides; i++) {
-                const v1 = vertices[i];
-                const v2 = vertices[(i + 1) % sides];
+                const c2x = edge2X + outwardX * offset;
+                const c2y = edge2Y + outwardY * offset;
 
-                // Calculate triangle's third point using apex angle 180°/n
-                const midX = (v1.x + v2.x) / 2;
-                const midY = (v1.y + v2.y) / 2;
-
-                // Vector from v1 to v2
-                const dx = v2.x - v1.x;
-                const dy = v2.y - v1.y;
-                const baseLength = Math.sqrt(dx * dx + dy * dy);
-
-                // Perpendicular vector (rotated 90 degrees inward)
-                const perpX = dy;
-                const perpY = -dx;
-                const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
-
-                // Height of isosceles triangle with apex angle = 180°/n
-                // h = (base/2) / tan(apexAngle/2)
-                const height = (baseLength / 2) / Math.tan(apexAngle / 2);
-                const thirdX = midX + (perpX / perpLength) * height;
-                const thirdY = midY + (perpY / perpLength) * height;
-
-                triangles.push({ v1, v2, third: { x: thirdX, y: thirdY } });
-            }
-
-            // Draw guide triangles if enabled
-            if (showGuides) {
-                triangles.forEach(tri => {
-                    const points = `${tri.v1.x},${tri.v1.y} ${tri.v2.x},${tri.v2.y} ${tri.third.x},${tri.third.y}`;
-                    shapes += `<polygon points="${points}" fill="none" stroke="#6cf" stroke-width="1" stroke-dasharray="3,3" opacity="0.3"/>`;
+                lobes.push({
+                    start: v1,
+                    end: v2,
+                    control1: { x: c1x, y: c1y },
+                    control2: { x: c2x, y: c2y }
                 });
             }
 
-            // Draw bezier curves with control points constrained to triangle edges
-            let pathData = `M ${vertices[0].x} ${vertices[0].y}`;
-
-            for (let i = 0; i < sides; i++) {
-                const tri = triangles[i];
-                const nextVertex = vertices[(i + 1) % sides];
-
-                // Control point 1: along edge from v1 to third point
-                const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * curveFactor;
-                const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * curveFactor;
-
-                // Control point 2: along edge from v2 to third point
-                const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * curveFactor;
-                const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * curveFactor;
-
-                // Draw cubic bezier curve
-                pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${nextVertex.x} ${nextVertex.y}`;
-
-                // Optionally draw control point handles if guides are visible
-                if (showGuides) {
-                    shapes += `<circle cx="${cp1x}" cy="${cp1y}" r="3" fill="#f66" opacity="0.6"/>`;
-                    shapes += `<circle cx="${cp2x}" cy="${cp2y}" r="3" fill="#6f6" opacity="0.6"/>`;
-                    shapes += `<line x1="${tri.v1.x}" y1="${tri.v1.y}" x2="${cp1x}" y2="${cp1y}" stroke="#f66" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
-                    shapes += `<line x1="${tri.v2.x}" y1="${tri.v2.y}" x2="${cp2x}" y2="${cp2y}" stroke="#6f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
-                }
-            }
-
-            // Close the path and add styling
-            shapes += `<path d="${pathData} Z" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
-
-            return shapes;
+            return lobes;
         }
 
-        function drawSpiral(center, baseSize, count, rotation, fill, stroke, strokeWidth, opacity) {
-            let shapes = '';
-            const phi = (1 + Math.sqrt(5)) / 2;
+        // Initial parameters
+        let handleDistance = 0.5;  // 0.0 to 1.0
+        let handlePosition = 0.33; // 0.0 to 0.5 (position along edge)
 
-            for (let i = 0; i < count; i++) {
-                const radius = baseSize / Math.pow(phi, i);
-                const angle = rotation + i * (Math.PI / 2);
-                const x = center.x + (baseSize - radius) * Math.cos(angle);
-                const y = center.y + (baseSize - radius) * Math.sin(angle);
-                const hue = (i * 30) % 360;
-                shapes += `<circle cx="${x}" cy="${y}" r="${radius}" fill="hsl(${hue}, 70%, 70%)" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+        let lobes = calculateControlPoints(handleDistance, handlePosition);
+
+        // Dragging state
+        let draggedHandle = null;
+
+        // Colors for lobes
+        const lobeColors = ['#ff6b6b', '#4ecdc4', '#45b7d1'];
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const showTriangle = document.getElementById('showTriangle').checked;
+            const showHandles = document.getElementById('showHandles').checked;
+            const showCenter = document.getElementById('showCenter').checked;
+            const coloredLobes = document.getElementById('coloredLobes').checked;
+            const strokeWidth = parseInt(document.getElementById('strokeWidth').value);
+            const lobeColor = document.getElementById('lobeColor').value;
+
+            // Draw reference triangle
+            if (showTriangle) {
+                ctx.strokeStyle = 'rgba(128, 128, 128, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                ctx.lineTo(vertices[1].x, vertices[1].y);
+                ctx.lineTo(vertices[2].x, vertices[2].y);
+                ctx.closePath();
+                ctx.stroke();
             }
 
-            return shapes;
-        }
-
-        function drawMandala(center, radius, branches, depth, fill, stroke, strokeWidth, opacity) {
-            let shapes = '';
-
-            function mandalaRecursive(cx, cy, r, d) {
-                if (d <= 0 || r < 2) return;
-
-                const hue = (d * 40) % 360;
-                shapes += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="hsl(${hue}, 70%, 60%)" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
-
-                const angleStep = (2 * Math.PI) / branches;
-                for (let i = 0; i < branches; i++) {
-                    const angle = i * angleStep;
-                    const nx = cx + r * Math.cos(angle);
-                    const ny = cy + r * Math.sin(angle);
-                    mandalaRecursive(nx, ny, r * 0.4, d - 1);
-                }
+            // Draw center point
+            if (showCenter) {
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(CENTER.x, CENTER.y, 4, 0, Math.PI * 2);
+                ctx.fill();
             }
 
-            mandalaRecursive(center.x, center.y, radius, depth);
-            return shapes;
-        }
+            // Draw lobes
+            lobes.forEach((lobe, i) => {
+                ctx.strokeStyle = coloredLobes ? lobeColors[i] : lobeColor;
+                ctx.lineWidth = strokeWidth;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(lobe.start.x, lobe.start.y);
+                ctx.bezierCurveTo(
+                    lobe.control1.x, lobe.control1.y,
+                    lobe.control2.x, lobe.control2.y,
+                    lobe.end.x, lobe.end.y
+                );
+                ctx.stroke();
 
-        function drawFractalCircles(center, size, depth, fill, stroke, strokeWidth, opacity) {
-            let shapes = '';
+                // Draw control handles
+                if (showHandles) {
+                    // Control lines
+                    ctx.strokeStyle = coloredLobes ? lobeColors[i] : 'rgba(0, 0, 255, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([5, 5]);
 
-            function fractal(cx, cy, r, d) {
-                if (d <= 0) {
-                    const hue = (d * 40) % 360;
-                    shapes += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="hsl(${hue}, 70%, 60%)" stroke="none" opacity="${opacity}"/>`;
-                    return;
+                    ctx.beginPath();
+                    ctx.moveTo(lobe.start.x, lobe.start.y);
+                    ctx.lineTo(lobe.control1.x, lobe.control1.y);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(lobe.end.x, lobe.end.y);
+                    ctx.lineTo(lobe.control2.x, lobe.control2.y);
+                    ctx.stroke();
+
+                    ctx.setLineDash([]);
+
+                    // Control points
+                    ctx.fillStyle = coloredLobes ? lobeColors[i] : '#0066ff';
+                    ctx.beginPath();
+                    ctx.arc(lobe.control1.x, lobe.control1.y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(lobe.control2.x, lobe.control2.y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // White border for visibility
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(lobe.control1.x, lobe.control1.y, 8, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(lobe.control2.x, lobe.control2.y, 8, 0, Math.PI * 2);
+                    ctx.stroke();
                 }
+            });
 
-                shapes += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
-
-                const angles = [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2];
-                angles.forEach(angle => {
-                    const offset = r * 0.7;
-                    const nx = cx + offset * Math.cos(angle);
-                    const ny = cy + offset * Math.sin(angle);
-                    fractal(nx, ny, r * 0.4, d - 1);
+            // Draw vertices
+            if (showHandles) {
+                vertices.forEach(v => {
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(v.x, v.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
                 });
             }
 
-            fractal(center.x, center.y, size, depth);
-            return shapes;
+            updateCoordinates();
         }
 
-        function updateCodeOutput(pattern, size, sides, rotation, depth, fill, stroke, strokeWidth, opacity) {
-            const code = `from svg_generator import *
-
-canvas = SVGCanvas(600, 600)
-center = Point(300, 300)
-
-# ${pattern} with custom parameters
-# Size: ${size}, Sides: ${sides}, Rotation: ${rotation}°
-# Depth: ${depth}, Fill: ${fill}, Stroke: ${stroke}
-
-canvas.save("outputs/custom.svg")`;
-
-            document.getElementById('code-output').textContent = code;
+        function updateCoordinates() {
+            const output = document.getElementById('coordsOutput');
+            let text = 'Control Points:\n\n';
+            lobes.forEach((lobe, i) => {
+                text += `Lobe ${i}:\n`;
+                text += `  C1: (${lobe.control1.x.toFixed(2)}, ${lobe.control1.y.toFixed(2)})\n`;
+                text += `  C2: (${lobe.control2.x.toFixed(2)}, ${lobe.control2.y.toFixed(2)})\n\n`;
+            });
+            output.textContent = text;
         }
 
-        function loadPreset(name) {
-            const presets = {
-                triangle: { pattern: 'triangle', size: 150, sides: 3, rotation: 0, depth: 3 },
-                mandala: { pattern: 'mandala', size: 120, sides: 8, rotation: 0, depth: 4 },
-                spiral: { pattern: 'spiral', size: 100, sides: 8, rotation: 0, depth: 3 },
-                fractal: { pattern: 'fractal', size: 100, sides: 6, rotation: 0, depth: 3 }
-            };
+        function getHandleAtPosition(x, y) {
+            const threshold = 12;
 
-            const preset = presets[name];
-            if (preset) {
-                document.getElementById('pattern-type').value = preset.pattern;
-                document.getElementById('size').value = preset.size;
-                document.getElementById('sides').value = preset.sides;
-                document.getElementById('rotation').value = preset.rotation;
-                document.getElementById('depth').value = preset.depth;
-                updatePreview();
+            for (let i = 0; i < lobes.length; i++) {
+                const lobe = lobes[i];
+
+                // Check control1
+                const dist1 = Math.sqrt(
+                    Math.pow(x - lobe.control1.x, 2) +
+                    Math.pow(y - lobe.control1.y, 2)
+                );
+                if (dist1 < threshold) {
+                    return { lobeIndex: i, control: 'control1' };
+                }
+
+                // Check control2
+                const dist2 = Math.sqrt(
+                    Math.pow(x - lobe.control2.x, 2) +
+                    Math.pow(y - lobe.control2.y, 2)
+                );
+                if (dist2 < threshold) {
+                    return { lobeIndex: i, control: 'control2' };
+                }
             }
+
+            return null;
         }
 
-        function downloadSVG() {
-            const svg = document.getElementById('svg-preview').innerHTML;
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            draggedHandle = getHandleAtPosition(x, y);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (draggedHandle) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                lobes[draggedHandle.lobeIndex][draggedHandle.control] = { x, y };
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            draggedHandle = null;
+        });
+
+        // Function to recalculate handles based on parameters
+        function recalculateHandles() {
+            handleDistance = parseFloat(document.getElementById('handleDistance').value);
+            handlePosition = parseFloat(document.getElementById('handlePosition').value);
+
+            document.getElementById('distanceValue').textContent = handleDistance.toFixed(2);
+            document.getElementById('positionValue').textContent = handlePosition.toFixed(2);
+
+            lobes = calculateControlPoints(handleDistance, handlePosition);
+            draw();
+        }
+
+        // Add event listeners for controls
+        document.getElementById('showTriangle').addEventListener('change', draw);
+        document.getElementById('showHandles').addEventListener('change', draw);
+        document.getElementById('showCenter').addEventListener('change', draw);
+        document.getElementById('coloredLobes').addEventListener('change', draw);
+        document.getElementById('strokeWidth').addEventListener('input', draw);
+        document.getElementById('lobeColor').addEventListener('input', draw);
+
+        // Add listeners for parameter sliders
+        document.getElementById('handleDistance').addEventListener('input', recalculateHandles);
+        document.getElementById('handlePosition').addEventListener('input', recalculateHandles);
+
+        function exportSVG() {
+            const strokeWidth = document.getElementById('strokeWidth').value;
+            const coloredLobes = document.getElementById('coloredLobes').checked;
+            const lobeColor = document.getElementById('lobeColor').value;
+
+            let svg = '<svg width="800" height="800" xmlns="http://www.w3.org/2000/svg">\n';
+            svg += '  <rect width="800" height="800" fill="#ffffff"/>\n\n';
+
+            // Triangle
+            svg += '  <polygon points="';
+            svg += vertices.map(v => `${v.x},${v.y}`).join(' ');
+            svg += '" fill="none" stroke="rgba(128,128,128,0.3)" stroke-width="1"/>\n\n';
+
+            // Lobes
+            lobes.forEach((lobe, i) => {
+                const color = coloredLobes ? lobeColors[i] : lobeColor;
+                svg += `  <path d="M ${lobe.start.x},${lobe.start.y} `;
+                svg += `C ${lobe.control1.x},${lobe.control1.y} `;
+                svg += `${lobe.control2.x},${lobe.control2.y} `;
+                svg += `${lobe.end.x},${lobe.end.y}" `;
+                svg += `fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>\n`;
+            });
+
+            svg += '</svg>';
+
+            // Download
             const blob = new Blob([svg], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'custom-pattern.svg';
+            a.download = 'floang.svg';
             a.click();
             URL.revokeObjectURL(url);
         }
 
-        function copyCode() {
-            const code = document.getElementById('code-output').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                alert('Code copied to clipboard!');
+        function copyControlPoints() {
+            let text = 'lobes = [\n';
+            lobes.forEach((lobe, i) => {
+                text += '    {\n';
+                text += `        'start': Point(${lobe.start.x}, ${lobe.start.y}),\n`;
+                text += `        'control1': Point(${lobe.control1.x.toFixed(2)}, ${lobe.control1.y.toFixed(2)}),\n`;
+                text += `        'control2': Point(${lobe.control2.x.toFixed(2)}, ${lobe.control2.y.toFixed(2)}),\n`;
+                text += `        'end': Point(${lobe.end.x}, ${lobe.end.y})\n`;
+                text += '    }' + (i < lobes.length - 1 ? ',' : '') + '\n';
             });
+            text += ']';
+
+            navigator.clipboard.writeText(text);
+            alert('Control points copied to clipboard!');
         }
+
+        function resetToDefault() {
+            handleDistance = 0.5;
+            handlePosition = 0.33;
+
+            document.getElementById('handleDistance').value = handleDistance;
+            document.getElementById('handlePosition').value = handlePosition;
+            document.getElementById('distanceValue').textContent = handleDistance.toFixed(2);
+            document.getElementById('positionValue').textContent = handlePosition.toFixed(2);
+
+            lobes = calculateControlPoints(handleDistance, handlePosition);
+            draw();
+        }
+
+        // Initial draw
+        draw();
     </script>
 </body>
 </html>

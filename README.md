@@ -1,4 +1,4 @@
-# 🌊 Floan - Flowangle Studio & SVG Generator
+# 🌊 FloAng - Flowangle Studio & SVG Generator
 
 A geometric pattern generator and interactive studio for creating flowangles and other algorithmically-generated SVG graphics.
 
@@ -41,7 +41,7 @@ python my_pattern.py
 ## 📁 Project Structure
 
 ```
-floan/
+FloAng/
 ├── src/                    # Core library
 │   └── svg_generator.py    # Point, SVGCanvas, primitives
 ├── examples/               # Built-in examples

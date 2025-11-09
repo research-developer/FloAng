@@ -5,11 +5,11 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/flowangle_animation.html"
+      "destination": "/FloAng.html"
     },
     {
       "source": "/share/:id",
-      "destination": "/flowangle_animation.html"
+      "destination": "/FloAng.html"
     }
   ],
   "headers": [
