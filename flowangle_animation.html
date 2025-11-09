@@ -4,626 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Floan - Flowangle Animation Studio</title>
+    <link rel="stylesheet" href="styles.css">
     <script src="constraints_manager.js"></script>
     <script src="constraint_functions.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0f0f0f;
-            color: #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Top Controls Panel */
-        #controls-panel {
-            background: #1a1a1a;
-            border-bottom: 2px solid #333;
-            padding: 15px 20px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        /* Main Content Area */
-        #main-content {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
-
-        /* Canvas Area - 100% of available space */
-        #canvas-area {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #151515;
-            position: relative;
-        }
-
-        #svg-preview {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #svg-preview svg {
-            width: 100%;
-            height: 100%;
-            max-width: 100%;
-            max-height: 100%;
-        }
-
-        /* Timeline at bottom */
-        #timeline {
-            height: 180px;
-            background: #1a1a1a;
-            border-top: 2px solid #333;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #timeline-header {
-            padding: 10px 20px;
-            background: #222;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
-
-        #keyframes-container {
-            flex: 1;
-            display: flex;
-            gap: 10px;
-            padding: 10px 20px;
-            overflow-x: auto;
-            align-items: center;
-        }
-
-        .keyframe {
-            min-width: 120px;
-            height: 120px;
-            background: #242424;
-            border: 2px solid #333;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .keyframe:hover {
-            border-color: #6cf;
-            transform: scale(1.05);
-        }
-
-        .keyframe.active {
-            border-color: #6cf;
-            box-shadow: 0 0 20px rgba(102, 204, 255, 0.3);
-        }
-
-        .keyframe-thumbnail {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 5px;
-        }
-
-        .keyframe-thumbnail svg {
-            max-width: 100%;
-            max-height: 100%;
-        }
-
-        .keyframe-label {
-            padding: 5px;
-            text-align: center;
-            font-size: 11px;
-            background: #1a1a1a;
-            border-top: 1px solid #333;
-        }
-
-        /* Pulse Controls */
-        #pulse-controls {
-            padding: 15px 20px;
-            background: #222;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            border-top: 1px solid #333;
-        }
-
-        .pulse-param {
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 8px;
-            border: 2px solid #333;
-        }
-
-        .pulse-param.active {
-            border-color: #6cf;
-        }
-
-        .pulse-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .pulse-controls-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        /* Control Groups */
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .control-label {
-            font-size: 11px;
-            color: #888;
-            text-transform: uppercase;
-        }
-
-        .control-value {
-            font-size: 14px;
-            color: #6cf;
-            font-family: 'Monaco', monospace;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 4px;
-            background: #333;
-            border-radius: 2px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            background: #6cf;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            background: #6cf;
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-        }
-
-        input[type="number"] {
-            width: 100%;
-            padding: 6px;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            border: 1px solid #333;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        button {
-            padding: 8px 16px;
-            background: #6cf;
-            color: #000;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-        button:hover {
-            background: #8df;
-            transform: translateY(-1px);
-        }
-
-        .preset-btn {
-            padding: 6px 12px;
-            background: #2a2a2a;
-            color: #6cf;
-            border: 1px solid #333;
-        }
-
-        .preset-btn:hover {
-            background: #333;
-        }
-
-        .play-btn {
-            background: #4a4;
-        }
-
-        .play-btn:hover {
-            background: #6c6;
-        }
-
-        .play-btn.playing {
-            background: #c44;
-        }
-
-        .play-btn.playing:hover {
-            background: #e66;
-        }
-
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: #6cf;
-        }
-
-        select {
-            padding: 6px 12px;
-            background: #2a2a2a;
-            color: #e0e0e0;
-            border: 1px solid #333;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        .divider {
-            width: 1px;
-            height: 30px;
-            background: #333;
-        }
-
-        .animation-controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        /* Share notification */
-        #share-notification {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #2a2a2a;
-            color: #6cf;
-            padding: 20px 40px;
-            border-radius: 8px;
-            border: 2px solid #6cf;
-            font-weight: bold;
-            font-size: 16px;
-            box-shadow: 0 4px 20px rgba(102, 204, 255, 0.4);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 1000;
-        }
-
-        #share-notification.show {
-            opacity: 1;
-        }
-
-        .share-btn {
-            background: #4a4;
-            color: #fff;
-        }
-
-        .share-btn:hover {
-            background: #6c6;
-        }
-
-        /* Feedback Mode Styles */
-        .feedback-mode-container {
-            background: #2a2a2a;
-            padding: 10px 15px;
-            border-radius: 6px;
-            border: 2px solid #333;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .feedback-mode-container.active {
-            border-color: #fa0;
-            background: #3a2a1a;
-        }
-
-        .feedback-label {
-            font-weight: bold;
-            color: #fa0;
-        }
-
-        .constraint-buttons {
-            display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }
-
-        .constraint-btn {
-            padding: 4px 8px;
-            background: #333;
-            color: #6cf;
-            border: 1px solid #444;
-            border-radius: 3px;
-            font-size: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .constraint-btn:hover {
-            background: #444;
-            border-color: #6cf;
-        }
-
-        .constraint-btn.active {
-            background: #6cf;
-            color: #000;
-            border-color: #6cf;
-        }
-
-        /* Constraint Manager Panel */
-        #constraint-manager {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1a1a1a;
-            border: 2px solid #6cf;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
-            display: none;
-            flex-direction: column;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-        }
-
-        #constraint-manager.visible {
-            display: flex;
-        }
-
-        .manager-header {
-            background: #222;
-            padding: 20px;
-            border-bottom: 2px solid #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .manager-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #6cf;
-        }
-
-        .close-btn {
-            background: #c44;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: none;
-            font-size: 20px;
-            color: white;
-        }
-
-        .close-btn:hover {
-            background: #e66;
-        }
-
-        .manager-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .manager-actions {
-            padding: 15px 20px;
-            background: #222;
-            border-top: 2px solid #333;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .constraint-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .constraint-table th {
-            background: #2a2a2a;
-            padding: 12px;
-            text-align: left;
-            font-size: 12px;
-            color: #888;
-            text-transform: uppercase;
-            border-bottom: 2px solid #333;
-        }
-
-        .constraint-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #333;
-            font-size: 13px;
-        }
-
-        .constraint-table tr:hover {
-            background: #222;
-        }
-
-        .constraint-value {
-            font-family: 'Monaco', monospace;
-            color: #6cf;
-        }
-
-        .action-btn {
-            padding: 4px 10px;
-            font-size: 11px;
-            background: #333;
-            color: #e0e0e0;
-            border: 1px solid #444;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-
-        .action-btn:hover {
-            background: #444;
-        }
-
-        .action-btn.delete {
-            background: #c44;
-            border-color: #c44;
-        }
-
-        .action-btn.delete:hover {
-            background: #e66;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #2a2a2a;
-            color: #6cf;
-            padding: 15px 25px;
-            border-radius: 8px;
-            border: 2px solid #6cf;
-            font-weight: bold;
-            font-size: 14px;
-            box-shadow: 0 4px 20px rgba(102, 204, 255, 0.4);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 3000;
-        }
-
-        .notification.show {
-            opacity: 1;
-        }
-
-        .notification.error {
-            border-color: #c44;
-            color: #c44;
-            box-shadow: 0 4px 20px rgba(204, 68, 68, 0.4);
-        }
-
-        .notification.success {
-            border-color: #4a4;
-            color: #4a4;
-            box-shadow: 0 4px 20px rgba(68, 170, 68, 0.4);
-        }
-
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            z-index: 1999;
-        }
-
-        .overlay.visible {
-            display: block;
-        }
-
-        .import-dialog {
-            margin-top: 20px;
-            padding: 15px;
-            background: #2a2a2a;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
-
-        .import-dialog textarea {
-            width: 100%;
-            min-height: 150px;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 10px;
-            font-family: 'Monaco', monospace;
-            font-size: 12px;
-            resize: vertical;
-        }
-
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: #888;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            color: #6cf;
-            font-weight: bold;
-        }
-
-        .control-group-extended {
-            position: relative;
-        }
-
-        .range-indicator {
-            font-size: 10px;
-            color: #666;
-            margin-top: 2px;
-            font-family: 'Monaco', monospace;
-        }
-
-        .range-indicator.feedback-active {
-            color: #fa0;
-        }
-    </style>
+    <script src="geometric_analysis.js"></script>
+    <script src="parameter_explorer.js"></script>
 </head>
 <body>
     <!-- Top Controls -->
@@ -705,6 +90,20 @@
             <span style="font-size: 13px;">Show Guides</span>
         </label>
 
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="show-analysis" onchange="updatePreview()">
+            <span style="font-size: 13px;">Geometric Analysis</span>
+        </label>
+
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="fill-container" onchange="toggleFillContainer()">
+            <span style="font-size: 13px;">Fill Container</span>
+        </label>
+
+        <div class="divider"></div>
+
+        <button onclick="openExplorer()" style="background: #c6f; color: #000;">🔍 Explore Parameter Space</button>
+
         <div class="divider"></div>
 
         <button class="share-btn" onclick="shareConfiguration()">Share Configuration</button>
@@ -719,7 +118,8 @@
     <div id="notification" class="notification"></div>
 
     <!-- Overlay for modal -->
-    <div id="overlay" class="overlay" onclick="closeConstraintManager()"></div>
+    <div id="overlay" class="overlay" onclick="closeAllModals()"></div>
+    <div id="explorer-overlay" class="overlay" onclick="closeExplorer()"></div>
 
     <!-- Constraint Manager Panel -->
     <div id="constraint-manager">
@@ -763,6 +163,98 @@
             <button onclick="importFromClipboard()">Import from Clipboard</button>
             <button class="preset-btn" onclick="clearAllConstraints()">Clear All</button>
             <button class="preset-btn" style="background: #c44; color: white;" onclick="resetConstraints()">Reset to Defaults</button>
+        </div>
+    </div>
+
+    <!-- Parameter Space Explorer Panel -->
+    <div id="parameter-explorer" style="display: none;">
+        <div class="manager-header">
+            <div class="manager-title">🔍 Parameter Space Explorer</div>
+            <button class="close-btn" onclick="closeExplorer()">×</button>
+        </div>
+        <div class="manager-content">
+            <!-- Exploration Controls -->
+            <div style="background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #6cf; margin-bottom: 15px;">Exploration Settings</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div class="control-group">
+                        <label class="control-label">Current n (sides)</label>
+                        <input type="number" id="explore-n" min="1" max="12" value="3" style="width: 100%;">
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Handle Angle Step</label>
+                        <input type="number" id="explore-angle-step" min="1" max="20" value="5" style="width: 100%;">
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Curve Factor Step</label>
+                        <input type="number" id="explore-curve-step" min="0.05" max="0.5" step="0.05" value="0.1" style="width: 100%;">
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Resolution</label>
+                        <select id="explore-resolution" style="width: 100%;">
+                            <option value="coarse">Coarse (Fast)</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="fine">Fine (Slow)</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="startExploration()" style="width: 100%; margin-top: 15px; padding: 12px; font-size: 14px;">
+                    🚀 Start Exploration
+                </button>
+                <div id="exploration-progress" style="display: none; margin-top: 15px; padding: 10px; background: #1a1a1a; border-radius: 4px; color: #6cf; text-align: center;">
+                    Exploring...
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="exploration-results" style="display: none;">
+                <h3 style="color: #6cf; margin-bottom: 15px;">Discoveries</h3>
+
+                <!-- Archetypes Grid -->
+                <div class="stats-container" style="margin-bottom: 20px;">
+                    <div class="stat-card" style="cursor: pointer;" onclick="showArchetype('fractalBloom')">
+                        <div class="stat-label">Fractal Bloom</div>
+                        <div class="stat-value" id="archetype-fractalBloom-count">0</div>
+                    </div>
+                    <div class="stat-card" style="cursor: pointer;" onclick="showArchetype('gridAligned')">
+                        <div class="stat-label">Grid Aligned</div>
+                        <div class="stat-value" id="archetype-gridAligned-count">0</div>
+                    </div>
+                    <div class="stat-card" style="cursor: pointer;" onclick="showArchetype('petalDominant')">
+                        <div class="stat-label">Petal Dominant</div>
+                        <div class="stat-value" id="archetype-petalDominant-count">0</div>
+                    </div>
+                    <div class="stat-card" style="cursor: pointer;" onclick="showArchetype('roundTransition')">
+                        <div class="stat-label">Round Transition</div>
+                        <div class="stat-value" id="archetype-roundTransition-count">0</div>
+                    </div>
+                </div>
+
+                <!-- Configuration Browser -->
+                <div id="config-browser" style="background: #2a2a2a; padding: 15px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 style="color: #6cf; margin: 0;">Configuration Browser</h4>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="prevConfig()" style="padding: 5px 10px;">◀ Prev</button>
+                            <span id="config-counter" style="color: #e0e0e0;">0 / 0</span>
+                            <button onclick="nextConfig()" style="padding: 5px 10px;">Next ▶</button>
+                        </div>
+                    </div>
+
+                    <div id="config-details" style="background: #1a1a1a; padding: 15px; border-radius: 4px; min-height: 200px;">
+                        <p style="color: #888; text-align: center;">No configuration selected</p>
+                    </div>
+
+                    <button onclick="loadSelectedConfig()" style="width: 100%; margin-top: 15px;">
+                        Load This Configuration
+                    </button>
+                </div>
+
+                <!-- Export Button -->
+                <button onclick="exportExploration()" style="width: 100%; margin-top: 15px; background: #4a4;">
+                    💾 Export Discoveries (JSON)
+                </button>
+            </div>
         </div>
     </div>
 
@@ -910,6 +402,16 @@
         let constraintManager = null;
         let feedbackMode = false;
 
+        // Geometric Analyzer
+        let geometricAnalyzer = new GeometricAnalyzer();
+        let analysisResults = null;
+
+        // Parameter Space Explorer
+        let parameterExplorer = new ParameterSpaceExplorer(geometricAnalyzer);
+        let currentDiscoveries = null;
+        let currentConfigList = [];
+        let currentConfigIndex = 0;
+
         // Parameter mapping for constraint system
         const paramMap = {
             'curveFactor': { id: 'curve-factor', display: 'Curve Factor', unit: '', decimals: 2 },
@@ -939,6 +441,20 @@
         updatePreview();
         updatePulseAnimations();
 
+        function toggleFillContainer() {
+            const fillContainer = document.getElementById('fill-container').checked;
+            const svgElement = document.querySelector('#svg-preview svg');
+            if (svgElement) {
+                if (fillContainer) {
+                    svgElement.classList.add('fill-container');
+                    svgElement.setAttribute('preserveAspectRatio', 'none');
+                } else {
+                    svgElement.classList.remove('fill-container');
+                    svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                }
+            }
+        }
+
         // Update ranges when n changes
         document.getElementById('sides').addEventListener('input', function() {
             if (constraintManager) {
@@ -953,6 +469,7 @@
                 handleAngle: parseFloat(document.getElementById('handle-angle').value),
                 rotation: parseFloat(document.getElementById('rotation').value),
                 showGuides: document.getElementById('show-guides').checked,
+                fillContainer: document.getElementById('fill-container').checked,
                 pulseSettings: {
                     curve: {
                         enabled: document.getElementById('pulse-curve-enabled').checked,
@@ -982,6 +499,7 @@
             document.getElementById('handle-angle').value = state.handleAngle;
             document.getElementById('rotation').value = state.rotation;
             document.getElementById('show-guides').checked = state.showGuides;
+            document.getElementById('fill-container').checked = state.fillContainer || false;
 
             // Apply pulse settings if present
             if (state.pulseSettings) {
@@ -1039,8 +557,17 @@
             document.getElementById('transition-value').textContent = document.getElementById('transition-time').value;
 
             // Generate SVG
-            const svg = generateFlowAngle(state);
+            let svg = generateFlowAngle(state);
+
+            // Add geometric analysis overlay if enabled
+            if (document.getElementById('show-analysis').checked) {
+                svg = addGeometricAnalysisOverlay(svg, state);
+            }
+
             document.getElementById('svg-preview').innerHTML = svg;
+
+            // Apply fill container setting
+            toggleFillContainer();
 
             // Update active keyframe if exists
             if (activeKeyframeIndex >= 0 && !isPlaying) {
@@ -1049,9 +576,200 @@
             }
         }
 
+        /**
+         * Add geometric analysis visualization overlay
+         */
+        function addGeometricAnalysisOverlay(svgString, state) {
+            // Parse the SVG string
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
+            const svgElement = svgDoc.querySelector('svg');
+
+            // Run geometric analysis
+            analysisResults = geometricAnalyzer.analyzeFlowAngle(state, 600);
+
+            let overlayShapes = '';
+
+            // Visualize intersections
+            analysisResults.intersections.forEach((intersection, i) => {
+                overlayShapes += `<circle cx="${intersection.x}" cy="${intersection.y}" r="4" fill="#ff00ff" stroke="#fff" stroke-width="1" opacity="0.8"/>`;
+                overlayShapes += `<text x="${intersection.x + 8}" y="${intersection.y - 8}" fill="#ff00ff" font-size="10" font-weight="bold">I${i}</text>`;
+            });
+
+            // Visualize regions
+            analysisResults.regions.forEach((region, i) => {
+                const color = region.type === 'center' ? '#ff6b6b' : '#4ecdc4';
+
+                // Draw region boundary
+                if (region.boundary.length > 0) {
+                    const pathData = 'M ' + region.boundary.map(p => `${p.x} ${p.y}`).join(' L ') + ' Z';
+                    overlayShapes += `<path d="${pathData}" fill="${color}" fill-opacity="0.15" stroke="${color}" stroke-width="2" stroke-dasharray="5,5"/>`;
+                }
+
+                // Draw centroid
+                overlayShapes += `<circle cx="${region.centroid.x}" cy="${region.centroid.y}" r="3" fill="${color}" stroke="#fff" stroke-width="1"/>`;
+
+                // Draw inscribed rectangle
+                if (region.inscribedRectangle) {
+                    const rect = region.inscribedRectangle;
+                    overlayShapes += `<rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" fill="none" stroke="#ffd93d" stroke-width="2" opacity="0.7"/>`;
+                }
+
+                // Draw inscribed ellipse
+                if (region.inscribedEllipse) {
+                    const ellipse = region.inscribedEllipse;
+                    const rotation = (ellipse.rotation * 180 / Math.PI).toFixed(2);
+                    overlayShapes += `<ellipse cx="${ellipse.center.x}" cy="${ellipse.center.y}" rx="${ellipse.semiMajorAxis}" ry="${ellipse.semiMinorAxis}" transform="rotate(${rotation} ${ellipse.center.x} ${ellipse.center.y})" fill="none" stroke="#6bcf7f" stroke-width="2" stroke-dasharray="3,3" opacity="0.7"/>`;
+                }
+
+                // Add region label
+                overlayShapes += `<text x="${region.centroid.x}" y="${region.centroid.y + 20}" fill="${color}" font-size="12" font-weight="bold" text-anchor="middle">${region.type.toUpperCase()}</text>`;
+                overlayShapes += `<text x="${region.centroid.x}" y="${region.centroid.y + 35}" fill="${color}" font-size="10" text-anchor="middle">Area: ${region.area.toFixed(0)}</text>`;
+            });
+
+            // Add analysis info panel
+            overlayShapes += generateAnalysisInfoPanel(analysisResults);
+
+            // Append overlay shapes to SVG
+            const g = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('id', 'analysis-overlay');
+            g.innerHTML = overlayShapes;
+            svgElement.appendChild(g);
+
+            // Serialize back to string
+            const serializer = new XMLSerializer();
+            return serializer.serializeToString(svgDoc);
+        }
+
+        /**
+         * Generate info panel showing analysis results
+         */
+        function generateAnalysisInfoPanel(results) {
+            let panel = '<g id="analysis-info-panel">';
+
+            // Background panel
+            panel += '<rect x="10" y="10" width="280" height="auto" rx="8" fill="#1a1a1a" fill-opacity="0.95" stroke="#6cf" stroke-width="2"/>';
+
+            let y = 30;
+
+            // Title
+            panel += `<text x="20" y="${y}" fill="#6cf" font-size="14" font-weight="bold">Geometric Analysis</text>`;
+            y += 25;
+
+            // Curve count
+            panel += `<text x="20" y="${y}" fill="#e0e0e0" font-size="11">Curves: ${results.curves.length}</text>`;
+            y += 18;
+
+            // Intersection count
+            panel += `<text x="20" y="${y}" fill="#ff00ff" font-size="11">Intersections: ${results.intersections.length}</text>`;
+            y += 18;
+
+            // Region count
+            panel += `<text x="20" y="${y}" fill="#4ecdc4" font-size="11">Regions: ${results.regions.length}</text>`;
+            y += 22;
+
+            // Region details
+            results.regions.forEach((region, i) => {
+                const color = region.type === 'center' ? '#ff6b6b' : '#4ecdc4';
+                panel += `<text x="20" y="${y}" fill="${color}" font-size="10" font-weight="bold">${region.type.toUpperCase()} REGION</text>`;
+                y += 15;
+                panel += `<text x="30" y="${y}" fill="#e0e0e0" font-size="9">Area: ${region.area.toFixed(1)}px²</text>`;
+                y += 12;
+
+                if (region.inscribedRectangle) {
+                    panel += `<text x="30" y="${y}" fill="#ffd93d" font-size="9">Rect: ${region.inscribedRectangle.width.toFixed(0)}×${region.inscribedRectangle.height.toFixed(0)}px</text>`;
+                    y += 12;
+                }
+
+                if (region.inscribedEllipse) {
+                    panel += `<text x="30" y="${y}" fill="#6bcf7f" font-size="9">Ellipse: ${(region.inscribedEllipse.semiMajorAxis * 2).toFixed(0)}×${(region.inscribedEllipse.semiMinorAxis * 2).toFixed(0)}px</text>`;
+                    y += 12;
+                }
+
+                y += 8;
+            });
+
+            // Adjust panel height
+            panel = panel.replace('height="auto"', `height="${y + 10}"`);
+
+            panel += '</g>';
+            return panel;
+        }
+
+        // Helper functions for 3D shading
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        function interpolateColor(color1, color2, factor) {
+            const c1 = hexToRgb(color1);
+            const c2 = hexToRgb(color2);
+
+            const r = Math.round(c1.r + (c2.r - c1.r) * factor);
+            const g = Math.round(c1.g + (c2.g - c1.g) * factor);
+            const b = Math.round(c1.b + (c2.b - c1.b) * factor);
+
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function calculateSurfaceNormal(t, points, tangents) {
+            const tangent = tangents[Math.floor(t * (tangents.length - 1))];
+            const normal = { x: -tangent.y, y: tangent.x };
+            const len = Math.sqrt(normal.x * normal.x + normal.y * normal.y);
+            if (len > 0) {
+                normal.x /= len;
+                normal.y /= len;
+            }
+            return normal;
+        }
+
+        function calculateLighting(point, normal, lightPos, intensity, ambient, spec, shine, depthAmount) {
+            const toLight = {
+                x: lightPos.x - point.x,
+                y: lightPos.y - point.y,
+                z: lightPos.z
+            };
+
+            const distance = Math.sqrt(toLight.x * toLight.x + toLight.y * toLight.y + toLight.z * toLight.z);
+            toLight.x /= distance;
+            toLight.y /= distance;
+            toLight.z /= distance;
+
+            const normal3d = {
+                x: normal.x,
+                y: normal.y,
+                z: depthAmount / 100.0
+            };
+
+            const normalLen = Math.sqrt(normal3d.x * normal3d.x + normal3d.y * normal3d.y + normal3d.z * normal3d.z);
+            normal3d.x /= normalLen;
+            normal3d.y /= normalLen;
+            normal3d.z /= normalLen;
+
+            const diffuse = Math.max(0, normal3d.x * toLight.x + normal3d.y * toLight.y + normal3d.z * toLight.z);
+
+            const viewDir = { x: 0, y: 0, z: 1 };
+            const dotNL = normal3d.x * toLight.x + normal3d.y * toLight.y + normal3d.z * toLight.z;
+            const reflect = {
+                x: 2 * dotNL * normal3d.x - toLight.x,
+                y: 2 * dotNL * normal3d.y - toLight.y,
+                z: 2 * dotNL * normal3d.z - toLight.z
+            };
+
+            const specular = Math.pow(Math.max(0, reflect.x * viewDir.x + reflect.y * viewDir.y + reflect.z * viewDir.z), shine);
+            const totalLight = ambient + (diffuse * intensity) + (specular * spec * intensity);
+
+            return Math.max(0, Math.min(1, totalLight));
+        }
+
         function generateFlowAngle(state, size = 600) {
             const center = { x: size / 2, y: size / 2 };
-            const radius = size * 0.30;
+            const radius = size * (1 / state.sides);
             const vertices = [];
             const angleStep = (2 * Math.PI) / state.sides;
             const rotRad = (state.rotation * Math.PI) / 180;
@@ -1068,7 +786,7 @@
             // Special case for n=1: circle
             if (state.sides === 1) {
                 return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                    <circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="#87ceeb" stroke="#4682b4" stroke-width="2" opacity="0.9"/>
                 </svg>`;
             }
 
@@ -1089,7 +807,7 @@
                 const cpY = midY + (perpY / perpLength) * offset;
 
                 return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M ${v1.x} ${v1.y} Q ${cpX} ${cpY}, ${v2.x} ${v2.y}" fill="none" stroke="#000080" stroke-width="2" opacity="0.8"/>
+                    <path d="M ${v1.x} ${v1.y} Q ${cpX} ${cpY}, ${v2.x} ${v2.y}" fill="none" stroke="#4682b4" stroke-width="3" opacity="0.9"/>
                 </svg>`;
             }
 
@@ -1115,16 +833,21 @@
                 triangles.push({ v1, v2, third: { x: thirdX, y: thirdY } });
             }
 
-            // Build path
-            let shapes = '';
+            // 3D Shading parameters (sensible defaults)
+            const lightPos = { x: size * 0.5, y: size * 0.2, z: 200 }; // Top-center with elevation
+            const intensity = 1.0;
+            const ambient = 0.3;
+            const specularity = 0.3;
+            const shininess = 10;
+            const depthAmount = 30;
+            const baseColor = '#87ceeb';
+            const highlightColor = '#ffffff';
+            const shadowColor = '#4682b4';
 
-            if (state.showGuides) {
-                triangles.forEach(tri => {
-                    shapes += `<polygon points="${tri.v1.x},${tri.v1.y} ${tri.v2.x},${tri.v2.y} ${tri.third.x},${tri.third.y}" fill="none" stroke="#6cf" stroke-width="1" stroke-dasharray="3,3" opacity="0.3"/>`;
-                });
-            }
-
-            let pathData = `M ${vertices[0].x} ${vertices[0].y}`;
+            // Calculate all points and tangents for shading
+            const segments = 50;
+            const allPoints = [];
+            const allTangents = [];
 
             for (let i = 0; i < state.sides; i++) {
                 const tri = triangles[i];
@@ -1134,9 +857,45 @@
                 const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.curveFactor;
                 const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.curveFactor;
 
-                pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${nextVertex.x} ${nextVertex.y}`;
+                for (let j = 0; j <= segments; j++) {
+                    const t = j / segments;
+                    const mt = 1 - t;
+                    const mt2 = mt * mt;
+                    const mt3 = mt2 * mt;
+                    const t2 = t * t;
+                    const t3 = t2 * t;
 
-                if (state.showGuides) {
+                    const x = mt3 * tri.v1.x + 3 * mt2 * t * cp1x + 3 * mt * t2 * cp2x + t3 * nextVertex.x;
+                    const y = mt3 * tri.v1.y + 3 * mt2 * t * cp1y + 3 * mt * t2 * cp2y + t3 * nextVertex.y;
+
+                    const dx = 3 * mt2 * (cp1x - tri.v1.x) + 6 * mt * t * (cp2x - cp1x) + 3 * t2 * (nextVertex.x - cp2x);
+                    const dy = 3 * mt2 * (cp1y - tri.v1.y) + 6 * mt * t * (cp2y - cp1y) + 3 * t2 * (nextVertex.y - cp2y);
+
+                    const tangentLen = Math.sqrt(dx * dx + dy * dy);
+                    allPoints.push({ x, y });
+                    allTangents.push({
+                        x: tangentLen > 0 ? dx / tangentLen : 0,
+                        y: tangentLen > 0 ? dy / tangentLen : 0
+                    });
+                }
+            }
+
+            // Build shaded gradient mesh
+            let shapes = '';
+
+            // Add guide shapes if enabled
+            if (state.showGuides) {
+                triangles.forEach(tri => {
+                    shapes += `<polygon points="${tri.v1.x},${tri.v1.y} ${tri.v2.x},${tri.v2.y} ${tri.third.x},${tri.third.y}" fill="#6cf" fill-opacity="0.1" stroke="#6cf" stroke-width="1" stroke-dasharray="3,3" opacity="0.3"/>`;
+                });
+
+                for (let i = 0; i < state.sides; i++) {
+                    const tri = triangles[i];
+                    const cp1x = tri.v1.x + (tri.third.x - tri.v1.x) * state.curveFactor;
+                    const cp1y = tri.v1.y + (tri.third.y - tri.v1.y) * state.curveFactor;
+                    const cp2x = tri.v2.x + (tri.third.x - tri.v2.x) * state.curveFactor;
+                    const cp2y = tri.v2.y + (tri.third.y - tri.v2.y) * state.curveFactor;
+
                     shapes += `<circle cx="${cp1x}" cy="${cp1y}" r="2" fill="#f66" opacity="0.6"/>`;
                     shapes += `<circle cx="${cp2x}" cy="${cp2y}" r="2" fill="#6f6" opacity="0.6"/>`;
                     shapes += `<line x1="${tri.v1.x}" y1="${tri.v1.y}" x2="${cp1x}" y2="${cp1y}" stroke="#f66" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
@@ -1144,7 +903,24 @@
                 }
             }
 
-            shapes += `<path d="${pathData} Z" fill="#87ceeb" stroke="#000080" stroke-width="2" opacity="0.8"/>`;
+            // Create gradient mesh with shading
+            for (let i = 0; i < allPoints.length - 1; i++) {
+                const p1 = allPoints[i];
+                const p2 = allPoints[i + 1];
+                const t = i / allPoints.length;
+
+                const normal = calculateSurfaceNormal(t, allPoints, allTangents);
+                const lighting = calculateLighting(p1, normal, lightPos, intensity, ambient, specularity, shininess, depthAmount);
+
+                let color;
+                if (lighting < 0.5) {
+                    color = interpolateColor(shadowColor, baseColor, lighting * 2);
+                } else {
+                    color = interpolateColor(baseColor, highlightColor, (lighting - 0.5) * 2);
+                }
+
+                shapes += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="3" stroke-linecap="round"/>`;
+            }
 
             return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
         }
@@ -1295,7 +1071,8 @@
                 curveFactor: state1.curveFactor + (state2.curveFactor - state1.curveFactor) * t,
                 handleAngle: state1.handleAngle + (state2.handleAngle - state1.handleAngle) * t,
                 rotation: state1.rotation + (state2.rotation - state1.rotation) * t,
-                showGuides: t < 0.5 ? state1.showGuides : state2.showGuides
+                showGuides: t < 0.5 ? state1.showGuides : state2.showGuides,
+                fillContainer: t < 0.5 ? state1.fillContainer : state2.fillContainer
             };
         }
 
@@ -1357,6 +1134,7 @@
             params.set('a', state.handleAngle);
             params.set('r', state.rotation);
             params.set('g', state.showGuides ? '1' : '0');
+            params.set('f', state.fillContainer ? '1' : '0');
 
             // Add pulse settings with compact names
             if (state.pulseSettings) {
@@ -1390,7 +1168,8 @@
                         c: parseFloat(kf.curveFactor.toFixed(3)),
                         a: kf.handleAngle,
                         r: kf.rotation,
-                        g: kf.showGuides ? 1 : 0
+                        g: kf.showGuides ? 1 : 0,
+                        f: kf.fillContainer ? 1 : 0
                     }));
 
                     // Convert to JSON and then to base64
@@ -1465,6 +1244,12 @@
                     stateLoaded = true;
                 }
 
+                if (params.has('f')) {
+                    const fillContainer = params.get('f') === '1';
+                    document.getElementById('fill-container').checked = fillContainer;
+                    stateLoaded = true;
+                }
+
                 // Parse pulse settings if present
                 if (params.has('pce')) {
                     // Curve pulse
@@ -1503,7 +1288,8 @@
                             curveFactor: kf.c,
                             handleAngle: kf.a,
                             rotation: kf.r,
-                            showGuides: kf.g === 1
+                            showGuides: kf.g === 1,
+                            fillContainer: kf.f === 1
                         }));
 
                         if (keyframes.length > 0) {
@@ -1550,6 +1336,7 @@
                 document.getElementById('handle-angle').value = config.handleAngle;
                 document.getElementById('rotation').value = config.rotation;
                 document.getElementById('show-guides').checked = config.showGuides;
+                document.getElementById('fill-container').checked = config.fillContainer || false;
 
                 // Load pulse settings if present
                 if (config.pulseSettings) {
@@ -1621,6 +1408,7 @@
                     handleAngle: state.handleAngle,
                     rotation: state.rotation,
                     showGuides: state.showGuides,
+                    fillContainer: state.fillContainer,
                     pulseSettings: state.pulseSettings,
                     keyframes: keyframes.length > 0 ? keyframes : undefined
                 };
@@ -1781,10 +1569,36 @@
                 return;
             }
 
-            // Get SVG dimensions
-            const bbox = svgElement.getBoundingClientRect();
-            const width = bbox.width || 600;
-            const height = bbox.height || 600;
+            // Get SVG dimensions respecting aspect ratio
+            const viewBox = svgElement.getAttribute('viewBox');
+            let width = 600;
+            let height = 600;
+
+            if (viewBox) {
+                const [, , vbWidth, vbHeight] = viewBox.split(' ').map(Number);
+                const aspectRatio = vbWidth / vbHeight;
+
+                const bbox = svgElement.getBoundingClientRect();
+                if (bbox.width && bbox.height) {
+                    width = bbox.width;
+                    height = bbox.height;
+                } else if (bbox.width) {
+                    width = bbox.width;
+                    height = bbox.width / aspectRatio;
+                } else if (bbox.height) {
+                    height = bbox.height;
+                    width = bbox.height * aspectRatio;
+                } else {
+                    // Use viewBox dimensions as fallback
+                    width = vbWidth;
+                    height = vbHeight;
+                }
+            } else {
+                // Fallback to bbox if no viewBox
+                const bbox = svgElement.getBoundingClientRect();
+                width = bbox.width || 600;
+                height = bbox.height || 600;
+            }
 
             // Create canvas
             const canvas = document.createElement('canvas');
@@ -1831,6 +1645,213 @@
             };
 
             img.src = url;
+        }
+
+        // ===== PARAMETER SPACE EXPLORER FUNCTIONS =====
+
+        function openExplorer() {
+            document.getElementById('parameter-explorer').style.display = 'flex';
+            document.getElementById('explorer-overlay').classList.add('visible');
+
+            // Set current n value
+            document.getElementById('explore-n').value = document.getElementById('sides').value;
+        }
+
+        function closeExplorer() {
+            document.getElementById('parameter-explorer').style.display = 'none';
+            document.getElementById('explorer-overlay').classList.remove('visible');
+        }
+
+        function closeAllModals() {
+            closeConstraintManager();
+            closeExplorer();
+        }
+
+        async function startExploration() {
+            const n = parseInt(document.getElementById('explore-n').value);
+            const resolution = document.getElementById('explore-resolution').value;
+
+            // Map resolution to step sizes
+            const resolutionMap = {
+                'coarse': { angleStep: 10, curveStep: 0.2 },
+                'medium': { angleStep: 5, curveStep: 0.1 },
+                'fine': { angleStep: 2, curveStep: 0.05 }
+            };
+
+            const steps = resolutionMap[resolution];
+
+            // Show progress
+            document.getElementById('exploration-progress').style.display = 'block';
+            document.getElementById('exploration-progress').textContent = `Exploring n=${n}... This may take a moment.`;
+
+            // Run exploration in a timeout to allow UI to update
+            setTimeout(() => {
+                try {
+                    currentDiscoveries = parameterExplorer.exploreParameterSpace(n, {
+                        handleAngleStep: steps.angleStep,
+                        curveFactorStep: steps.curveStep
+                    });
+
+                    console.log(parameterExplorer.generateReport(n));
+
+                    // Show results
+                    displayExplorationResults();
+
+                    // Hide progress
+                    document.getElementById('exploration-progress').style.display = 'none';
+
+                } catch (error) {
+                    console.error('Exploration error:', error);
+                    document.getElementById('exploration-progress').textContent = 'Exploration failed: ' + error.message;
+                }
+            }, 100);
+        }
+
+        function displayExplorationResults() {
+            document.getElementById('exploration-results').style.display = 'block';
+
+            // Update archetype counts
+            Object.entries(currentDiscoveries.archetypes).forEach(([archetype, configs]) => {
+                const countElement = document.getElementById(`archetype-${archetype}-count`);
+                if (countElement) {
+                    countElement.textContent = configs.length;
+                }
+            });
+
+            // Default to showing fractalBloom archetype
+            showArchetype('fractalBloom');
+        }
+
+        function showArchetype(archetypeName) {
+            currentConfigList = currentDiscoveries.archetypes[archetypeName] || [];
+            currentConfigIndex = 0;
+
+            if (currentConfigList.length > 0) {
+                displayCurrentConfig();
+            } else {
+                document.getElementById('config-details').innerHTML = `
+                    <p style="color: #888; text-align: center;">No configurations found for ${archetypeName}</p>
+                `;
+                document.getElementById('config-counter').textContent = '0 / 0';
+            }
+        }
+
+        function prevConfig() {
+            if (currentConfigList.length === 0) return;
+            currentConfigIndex = (currentConfigIndex - 1 + currentConfigList.length) % currentConfigList.length;
+            displayCurrentConfig();
+        }
+
+        function nextConfig() {
+            if (currentConfigList.length === 0) return;
+            currentConfigIndex = (currentConfigIndex + 1) % currentConfigList.length;
+            displayCurrentConfig();
+        }
+
+        function displayCurrentConfig() {
+            if (currentConfigList.length === 0) return;
+
+            const config = currentConfigList[currentConfigIndex];
+            const state = config.state;
+            const metrics = config.metrics;
+
+            // Update counter
+            document.getElementById('config-counter').textContent = `${currentConfigIndex + 1} / ${currentConfigList.length}`;
+
+            // Build details HTML
+            let html = '<div style="display: grid; gap: 12px;">';
+
+            // Parameters
+            html += '<div style="background: #2a2a2a; padding: 10px; border-radius: 4px;">';
+            html += '<h4 style="color: #c6f; margin: 0 0 10px 0; font-size: 12px;">PARAMETERS</h4>';
+            html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">`;
+            html += `<div><span style="color: #888;">Sides:</span> <span style="color: #6cf;">${state.sides}</span></div>`;
+            html += `<div><span style="color: #888;">Handle Angle:</span> <span style="color: #6cf;">${state.handleAngle}°</span></div>`;
+            html += `<div><span style="color: #888;">Curve Factor:</span> <span style="color: #6cf;">${state.curveFactor}</span></div>`;
+            html += `<div><span style="color: #888;">Rotation:</span> <span style="color: #6cf;">${state.rotation}°</span></div>`;
+            html += '</div></div>';
+
+            // Metrics
+            html += '<div style="background: #2a2a2a; padding: 10px; border-radius: 4px;">';
+            html += '<h4 style="color: #c6f; margin: 0 0 10px 0; font-size: 12px;">METRICS</h4>';
+            html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">`;
+            html += `<div><span style="color: #888;">Complexity:</span> <span style="color: #ff6b6b;">${metrics.complexityScore.toFixed(3)}</span></div>`;
+            html += `<div><span style="color: #888;">Simplicity:</span> <span style="color: #4ecdc4;">${metrics.simplicityScore.toFixed(3)}</span></div>`;
+            html += `<div><span style="color: #888;">Roundness:</span> <span style="color: #ffd93d;">${metrics.roundness.toFixed(3)}</span></div>`;
+            html += `<div><span style="color: #888;">Regularity:</span> <span style="color: #6bcf7f;">${metrics.regularity.toFixed(3)}</span></div>`;
+            html += `<div><span style="color: #888;">Center Dom.:</span> <span style="color: #c6f;">${metrics.centerDominance.toFixed(3)}</span></div>`;
+            html += `<div><span style="color: #888;">Intersections:</span> <span style="color: #ff00ff;">${metrics.intersectionCount}</span></div>`;
+            html += '</div></div>';
+
+            // Areas
+            html += '<div style="background: #2a2a2a; padding: 10px; border-radius: 4px;">';
+            html += '<h4 style="color: #c6f; margin: 0 0 10px 0; font-size: 12px;">AREAS</h4>';
+            html += `<div style="font-size: 11px;">`;
+            html += `<div style="margin-bottom: 5px;"><span style="color: #888;">Total:</span> <span style="color: #e0e0e0;">${metrics.totalArea.toFixed(0)}px²</span></div>`;
+            html += `<div style="margin-bottom: 5px;"><span style="color: #888;">Center:</span> <span style="color: #e0e0e0;">${metrics.centerArea.toFixed(0)}px²</span></div>`;
+            if (metrics.petalAreas.length > 0) {
+                html += `<div><span style="color: #888;">Petals (avg):</span> <span style="color: #e0e0e0;">${(metrics.petalAreas.reduce((a,b) => a+b, 0) / metrics.petalAreas.length).toFixed(0)}px²</span></div>`;
+            }
+            html += '</div></div>';
+
+            html += '</div>';
+
+            document.getElementById('config-details').innerHTML = html;
+        }
+
+        function loadSelectedConfig() {
+            if (currentConfigList.length === 0) return;
+
+            const config = currentConfigList[currentConfigIndex];
+            const state = config.state;
+
+            // Apply state to UI
+            document.getElementById('sides').value = state.sides;
+            document.getElementById('curve-factor').value = state.curveFactor;
+            document.getElementById('handle-angle').value = state.handleAngle;
+            document.getElementById('rotation').value = state.rotation;
+
+            // Update preview
+            updatePreview();
+
+            // Close explorer
+            closeExplorer();
+
+            // Show notification
+            showNotification(`Loaded configuration: n=${state.sides}, angle=${state.handleAngle}°, curve=${state.curveFactor}`, 'success');
+        }
+
+        function exportExploration() {
+            const json = parameterExplorer.exportDiscoveries();
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(json).then(() => {
+                showNotification('Exploration results copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showNotification('Failed to copy to clipboard', 'error');
+            });
+
+            // Also download as file
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `flowangle-exploration-n${currentDiscoveries.n}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification show ' + type;
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
         }
     </script>
 </body>
