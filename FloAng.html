@@ -532,7 +532,10 @@
         (async () => {
             const hasURLParams = await loadFromURL(); // Load from URL first if parameters exist
             if (!hasURLParams) {
-                loadFromLocalStorage(); // If no URL params, try localStorage
+                const hasLocalStorage = loadFromLocalStorage(); // If no URL params, try localStorage
+                if (!hasLocalStorage) {
+                    loadDefaultConfig(); // If no saved state, load default
+                }
             }
 
             updatePreview();
@@ -1065,7 +1068,7 @@
 
         function loadPreset(name) {
             const presets = {
-                triquetra: { sides: 3, flowFactor: -0.66, handleAngle: 60, rotation: 0 },
+                triquetra: { sides: 3, flowFactor: -0.66, handleAngle: 60, rotation: -30 },
                 flower: { sides: 6, flowFactor: -0.8, handleAngle: 30, rotation: 0 },
                 star: { sides: 5, flowFactor: -1.8, handleAngle: 72, rotation: -18 },
                 smooth: { sides: 8, flowFactor: -0.5, handleAngle: 22.5, rotation: 0 }
@@ -1080,6 +1083,15 @@
                 updatePreview();
                 saveToLocalStorage(); // Save preset selection
             }
+        }
+
+        // Load default configuration for first-time visitors
+        function loadDefaultConfig() {
+            // Use triquetra as the beautiful default
+            document.getElementById('sides').value = 3;
+            document.getElementById('flow-factor').value = -0.66;
+            document.getElementById('handle-angle').value = 60;
+            document.getElementById('rotation').value = -30;
         }
 
         function updatePulseAnimations() {
