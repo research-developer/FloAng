@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FloAng - Flowangle Animation Studio</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="constraints_manager.js"></script>
-    <script src="constraint_functions.js"></script>
     <script src="geometric_analysis.js"></script>
     <script src="parameter_explorer.js"></script>
 </head>
@@ -527,7 +525,14 @@
 
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', async () => {
-            initConstraintManager(); // Initialize constraint manager
+            // Initialize constraint manager if available
+            if (typeof initConstraintManager === 'function') {
+                try {
+                    initConstraintManager();
+                } catch (e) {
+                    console.warn('Constraint manager not available:', e);
+                }
+            }
 
             // Load state priority: URL params > localStorage > defaults
             const hasURLParams = await loadFromURL(); // Load from URL first if parameters exist
