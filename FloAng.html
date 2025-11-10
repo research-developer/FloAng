@@ -32,48 +32,27 @@
             </div>
         </div>
 
-        <div class="control-group control-group-extended">
+        <div class="control-group">
             <label class="control-label">Flow</label>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="stepper-btn" id="flow-dec" onclick="adjustFlow(-0.01)">◀</button>
-                <input type="number" id="flow-factor" min="-3" max="1" step="0.01" value="-0.66" onchange="onFlowChange()" style="width: 80px; text-align: center;">
-                <button class="stepper-btn" id="flow-inc" onclick="adjustFlow(0.01)">▶</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="flow-factor" min="-3" max="1" step="0.01" value="-0.66" oninput="updatePreview()">
                 <span class="control-value" id="flow-value">-0.66</span>
             </div>
-            <div class="range-indicator" id="flow-range-indicator">[-3.00 to 1.00]</div>
-            <div class="constraint-buttons" id="flow-constraints" style="display: none;">
-                <button class="constraint-btn" onclick="captureConstraint('flowFactor', 'min')">Set Min</button>
-                <button class="constraint-btn" onclick="captureConstraint('flowFactor', 'max')">Set Max</button>
-            </div>
         </div>
 
-        <div class="control-group control-group-extended">
+        <div class="control-group">
             <label class="control-label">Angle</label>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="stepper-btn" id="angle-dec" onclick="adjustAngle(-1)">◀</button>
-                <input type="number" id="handle-angle" min="10" max="170" step="1" value="60" onchange="onAngleChange()" style="width: 80px; text-align: center;">
-                <button class="stepper-btn" id="angle-inc" onclick="adjustAngle(1)">▶</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="handle-angle" min="10" max="170" step="1" value="60" oninput="updatePreview()">
                 <span class="control-value" id="handle-angle-value">60°</span>
             </div>
-            <div class="range-indicator" id="angle-range-indicator">[10° to 170°]</div>
-            <div class="constraint-buttons" id="angle-constraints" style="display: none;">
-                <button class="constraint-btn" onclick="captureConstraint('handleAngle', 'min')">Set Min</button>
-                <button class="constraint-btn" onclick="captureConstraint('handleAngle', 'max')">Set Max</button>
-            </div>
         </div>
 
-        <div class="control-group control-group-extended">
+        <div class="control-group">
             <label class="control-label">Spin</label>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="stepper-btn" id="spin-dec" onclick="adjustSpin(-1)">◀</button>
-                <input type="number" id="rotation" min="0" max="360" step="1" value="0" onchange="onSpinChange()" style="width: 80px; text-align: center;">
-                <button class="stepper-btn" id="spin-inc" onclick="adjustSpin(1)">▶</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="rotation" min="0" max="360" step="1" value="0" oninput="updatePreview()">
                 <span class="control-value" id="rotation-value">0°</span>
-            </div>
-            <div class="range-indicator" id="rotation-range-indicator">[0° to 360°]</div>
-            <div class="constraint-buttons" id="rotation-constraints" style="display: none;">
-                <button class="constraint-btn" onclick="captureConstraint('rotation', 'min')">Set Min</button>
-                <button class="constraint-btn" onclick="captureConstraint('rotation', 'max')">Set Max</button>
             </div>
         </div>
 
