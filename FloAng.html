@@ -2369,6 +2369,9 @@
         // ===== KEYBOARD CONTROLS =====
 
         let keyboardListenerCleanup = null;
+        let pressedKeys = new Set();
+        let keyboardAnimationFrame = null;
+        let lastKeyboardUpdate = 0;
 
         function setupKeyboardControls() {
             // Clean up old listener
@@ -2376,55 +2379,72 @@
                 keyboardListenerCleanup();
             }
 
-            const handler = function(event) {
+            const keydownHandler = function(event) {
                 // Don't intercept if user is typing in an input
                 if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
                     return;
                 }
 
-                let handled = false;
-
-                switch(event.key) {
-                    case 'ArrowUp':
-                        adjustFlow(0.01);
-                        handled = true;
-                        break;
-                    case 'ArrowDown':
-                        adjustFlow(-0.01);
-                        handled = true;
-                        break;
-                    case 'ArrowLeft':
-                        adjustAngle(-1);
-                        handled = true;
-                        break;
-                    case 'ArrowRight':
-                        adjustAngle(1);
-                        handled = true;
-                        break;
-                    case '.':
-                    case '>':
-                        adjustSides(1);
-                        handled = true;
-                        break;
-                    case ',':
-                    case '<':
-                        adjustSides(-1);
-                        handled = true;
-                        break;
-                }
-
-                if (handled) {
+                const validKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ',', '.', '<', '>'];
+                if (validKeys.includes(event.key)) {
                     event.preventDefault();
+                    pressedKeys.add(event.key);
                     showKeyboardHint(event.key);
+
+                    // Start animation loop if not already running
+                    if (!keyboardAnimationFrame) {
+                        keyboardAnimationFrame = requestAnimationFrame(updateFromKeyboard);
+                    }
                 }
             };
 
-            document.addEventListener('keydown', handler);
+            const keyupHandler = function(event) {
+                pressedKeys.delete(event.key);
+
+                // Stop animation loop if no keys pressed
+                if (pressedKeys.size === 0 && keyboardAnimationFrame) {
+                    cancelAnimationFrame(keyboardAnimationFrame);
+                    keyboardAnimationFrame = null;
+                }
+            };
+
+            document.addEventListener('keydown', keydownHandler);
+            document.addEventListener('keyup', keyupHandler);
 
             // Return cleanup function
             keyboardListenerCleanup = () => {
-                document.removeEventListener('keydown', handler);
+                document.removeEventListener('keydown', keydownHandler);
+                document.removeEventListener('keyup', keyupHandler);
+                if (keyboardAnimationFrame) {
+                    cancelAnimationFrame(keyboardAnimationFrame);
+                    keyboardAnimationFrame = null;
+                }
+                pressedKeys.clear();
             };
+        }
+
+        function updateFromKeyboard(timestamp) {
+            // Throttle to ~60fps
+            if (timestamp - lastKeyboardUpdate < 16) {
+                keyboardAnimationFrame = requestAnimationFrame(updateFromKeyboard);
+                return;
+            }
+            lastKeyboardUpdate = timestamp;
+
+            // Apply all currently pressed keys
+            if (pressedKeys.has('ArrowUp')) adjustFlow(0.01);
+            if (pressedKeys.has('ArrowDown')) adjustFlow(-0.01);
+            if (pressedKeys.has('ArrowLeft')) adjustAngle(-1);
+            if (pressedKeys.has('ArrowRight')) adjustAngle(1);
+            if (pressedKeys.has('.') || pressedKeys.has('>')) adjustSides(1);
+            if (pressedKeys.has(',') || pressedKeys.has('<')) adjustSides(-1);
+
+            // Continue animation loop
+            if (pressedKeys.size > 0) {
+                keyboardAnimationFrame = requestAnimationFrame(updateFromKeyboard);
+            } else {
+                keyboardAnimationFrame = null;
+            }
         }
 
         function adjustSides(delta) {
