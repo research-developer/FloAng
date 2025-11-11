@@ -2228,9 +2228,11 @@
         function adjustAngle(delta) {
             const input = document.getElementById('handle-angle');
             let newValue = parseInt(input.value) + delta;
-            newValue = Math.max(parameterLimits.angle.min, Math.min(parameterLimits.angle.max, newValue));
+            const minAngle = parseFloat(input.min);
+            const maxAngle = parseFloat(input.max);
+            newValue = Math.max(minAngle, Math.min(maxAngle, newValue));
             input.value = newValue;
-            onAngleChange();
+            updateAngleSlider();
         }
 
         function adjustSpin(delta) {
@@ -2428,8 +2430,7 @@
             let newValue = parseInt(input.value) + delta;
             newValue = Math.max(1, Math.min(12, newValue));
             input.value = newValue;
-            document.getElementById('sides-value').textContent = newValue;
-            updatePreview();
+            updateSidesAndAngleRange();
         }
 
         function showKeyboardHint(key) {
