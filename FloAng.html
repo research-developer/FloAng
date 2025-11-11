@@ -2372,6 +2372,7 @@
         let pressedKeys = new Set();
         let keyboardAnimationFrame = null;
         let lastKeyboardUpdate = 0;
+        let keyPressTimes = new Map(); // Track when each key was first pressed
 
         function setupKeyboardControls() {
             // Clean up old listener
@@ -2388,6 +2389,12 @@
                 const validKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ',', '.', '<', '>'];
                 if (validKeys.includes(event.key)) {
                     event.preventDefault();
+
+                    // Track when key was first pressed (for easing)
+                    if (!pressedKeys.has(event.key)) {
+                        keyPressTimes.set(event.key, performance.now());
+                    }
+
                     pressedKeys.add(event.key);
                     showKeyboardHint(event.key);
 
@@ -2400,6 +2407,7 @@
 
             const keyupHandler = function(event) {
                 pressedKeys.delete(event.key);
+                keyPressTimes.delete(event.key);
 
                 // Stop animation loop if no keys pressed
                 if (pressedKeys.size === 0 && keyboardAnimationFrame) {
@@ -2420,7 +2428,35 @@
                     keyboardAnimationFrame = null;
                 }
                 pressedKeys.clear();
+                keyPressTimes.clear();
             };
+        }
+
+        // Easing function for keyboard acceleration (ease-in-out-cubic)
+        function keyboardEasing(t) {
+            // t is time in seconds
+            // Starts slow, accelerates, then caps
+            const maxTime = 1.5; // Max acceleration time in seconds
+            const normalizedTime = Math.min(t / maxTime, 1);
+
+            // Ease-in-out cubic curve
+            if (normalizedTime < 0.5) {
+                return 4 * normalizedTime * normalizedTime * normalizedTime;
+            } else {
+                return 1 - Math.pow(-2 * normalizedTime + 2, 3) / 2;
+            }
+        }
+
+        function getAccelerationMultiplier(key) {
+            const startTime = keyPressTimes.get(key);
+            if (!startTime) return 0.3; // Slow start if no time tracked
+
+            const elapsedTime = (performance.now() - startTime) / 1000; // Convert to seconds
+            const baseSpeed = 0.3; // Minimum speed multiplier
+            const maxSpeed = 3.0; // Maximum speed multiplier
+
+            const eased = keyboardEasing(elapsedTime);
+            return baseSpeed + (maxSpeed - baseSpeed) * eased;
         }
 
         function updateFromKeyboard(timestamp) {
@@ -2431,13 +2467,31 @@
             }
             lastKeyboardUpdate = timestamp;
 
-            // Apply all currently pressed keys
-            if (pressedKeys.has('ArrowUp')) adjustFlow(0.01);
-            if (pressedKeys.has('ArrowDown')) adjustFlow(-0.01);
-            if (pressedKeys.has('ArrowLeft')) adjustAngle(-1);
-            if (pressedKeys.has('ArrowRight')) adjustAngle(1);
-            if (pressedKeys.has('.') || pressedKeys.has('>')) adjustSides(1);
-            if (pressedKeys.has(',') || pressedKeys.has('<')) adjustSides(-1);
+            // Apply all currently pressed keys with acceleration
+            if (pressedKeys.has('ArrowUp')) {
+                const mult = getAccelerationMultiplier('ArrowUp');
+                adjustFlow(0.01 * mult);
+            }
+            if (pressedKeys.has('ArrowDown')) {
+                const mult = getAccelerationMultiplier('ArrowDown');
+                adjustFlow(-0.01 * mult);
+            }
+            if (pressedKeys.has('ArrowLeft')) {
+                const mult = getAccelerationMultiplier('ArrowLeft');
+                adjustAngle(-1 * mult);
+            }
+            if (pressedKeys.has('ArrowRight')) {
+                const mult = getAccelerationMultiplier('ArrowRight');
+                adjustAngle(1 * mult);
+            }
+            if (pressedKeys.has('.') || pressedKeys.has('>')) {
+                const mult = getAccelerationMultiplier('.') || getAccelerationMultiplier('>');
+                adjustSides(1 * mult);
+            }
+            if (pressedKeys.has(',') || pressedKeys.has('<')) {
+                const mult = getAccelerationMultiplier(',') || getAccelerationMultiplier('<');
+                adjustSides(-1 * mult);
+            }
 
             // Continue animation loop
             if (pressedKeys.size > 0) {
