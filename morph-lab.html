@@ -593,22 +593,59 @@
                     currentAnchor.pos.y = currentAnchor.pos.y + (targetY - currentAnchor.pos.y) * normalizationStrength;
                 }
 
-                // STEP 3: Save initial handles before applyParams overwrites them
+                // STEP 3: Ease new anchor's handles from tangent to orthogonal
                 const newAnchorIdx = result.anchors.length - 1;
                 const emergingAnchor = result.anchors[newAnchorIdx];
 
-                // Store initial handles (20% ratio of tangent)
-                const initialHandleIn = { ...emergingAnchor.handleIn };
-                const initialHandleOut = { ...emergingAnchor.handleOut };
+                // Calculate what the INITIAL tangent-based handles were
+                // (Re-calculate from scratch each frame to ensure consistency)
+                const lastAnchor = result.anchors[newAnchorIdx - 1];
+                const firstAnchor = result.anchors[0];
 
-                // Update all handles to maintain orthogonality
+                const p0 = lastAnchor.pos;
+                const cp1Initial = {
+                    x: p0.x + lastAnchor.handleOut.x,
+                    y: p0.y + lastAnchor.handleOut.y
+                };
+                const cp2Initial = {
+                    x: firstAnchor.pos.x + firstAnchor.handleIn.x,
+                    y: firstAnchor.pos.y + firstAnchor.handleIn.y
+                };
+                const p3 = firstAnchor.pos;
+
+                const insertT = params.insertionPosition;
+                const mt = 1 - insertT;
+                const mt2 = mt * mt;
+                const t2 = insertT * insertT;
+
+                // Tangent at insertion point
+                const dx = 3 * (mt2 * (cp1Initial.x - p0.x) + 2 * mt * insertT * (cp2Initial.x - cp1Initial.x) + t2 * (p3.x - cp2Initial.x));
+                const dy = 3 * (mt2 * (cp1Initial.y - p0.y) + 2 * mt * insertT * (cp2Initial.y - cp1Initial.y) + t2 * (p3.y - cp2Initial.y));
+
+                const tangentLen = Math.sqrt(dx * dx + dy * dy);
+                const initialHandleIn = { x: 0, y: 0 };
+                const initialHandleOut = { x: 0, y: 0 };
+
+                if (tangentLen > 0) {
+                    const normDx = dx / tangentLen;
+                    const normDy = dy / tangentLen;
+                    const initialRatio = 0.2;
+                    const handleLength = tangentLen * insertT * initialRatio;
+
+                    initialHandleIn.x = -normDx * handleLength;
+                    initialHandleIn.y = -normDy * handleLength;
+                    initialHandleOut.x = normDx * handleLength;
+                    initialHandleOut.y = normDy * handleLength;
+                }
+
+                // Apply orthogonal parameters to get target handles
                 result.applyParams(params.flow, currentAngle);
 
-                // After applyParams, get the target orthogonal handles
+                // Get target orthogonal handles
                 const targetHandleIn = { ...emergingAnchor.handleIn };
                 const targetHandleOut = { ...emergingAnchor.handleOut };
 
-                // Interpolate from initial (20% tangent-based) to final (orthogonal)
+                // Interpolate from initial tangent-based to final orthogonal
                 emergingAnchor.handleIn.x = initialHandleIn.x + (targetHandleIn.x - initialHandleIn.x) * t;
                 emergingAnchor.handleIn.y = initialHandleIn.y + (targetHandleIn.y - initialHandleIn.y) * t;
                 emergingAnchor.handleOut.x = initialHandleOut.x + (targetHandleOut.x - initialHandleOut.x) * t;
