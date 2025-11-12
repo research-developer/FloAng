@@ -491,8 +491,9 @@
          * - Removed result.applyParams() call → was causing abrupt angle changes to ALL anchors
          * - Added handle recalculation for ALL anchors using toOrthogonal → fixes asymmetry
          * - Separate apex calculations for handleIn and handleOut → proper bezier curve formation
-         * - Fixed anchor[0].handleIn by processing emergingAnchor→anchor[0] edge → sets anchor[0].handleIn only
-         * - Emerging anchor's handleOut/handleIn get special easing in STEP 3
+         * - Skip emergingAnchor in handle loop → prevents double-setting anchor[0].handleIn
+         * - Set anchor[0].handleIn in STEP 3 using target apex → matches emergingAnchor.handleOut apex
+         * - Only emergingAnchor's handles get eased, anchor[0].handleIn uses full orthogonal
          *
          * Steps:
          * 1. Insert new anchor between anchor[0] and anchor[-1]
@@ -626,12 +627,8 @@
                     const apexX = midX + (perpX / perpLength) * height;
                     const apexY = midY + (perpY / perpLength) * height;
 
-                    // For emerging anchor: only set nextAnchor.handleIn, skip anchor.handleOut
-                    // (emerging anchor's handleOut gets special easing treatment in STEP 3)
-                    if (i === newAnchorIdx) {
-                        nextAnchor.handleIn.x = (apexX - nextAnchor.pos.x) * params.flow;
-                        nextAnchor.handleIn.y = (apexY - nextAnchor.pos.y) * params.flow;
-                    } else {
+                    // Skip emerging anchor entirely - STEP 3 handles its handles
+                    if (i !== newAnchorIdx) {
                         anchor.handleOut.x = (apexX - anchor.pos.x) * params.flow;
                         anchor.handleOut.y = (apexY - anchor.pos.y) * params.flow;
 
@@ -735,6 +732,13 @@
                 emergingAnchor.handleIn.y = initialHandleIn.y + (targetHandleIn.y - initialHandleIn.y) * t;
                 emergingAnchor.handleOut.x = initialHandleOut.x + (targetHandleOut.x - initialHandleOut.x) * t;
                 emergingAnchor.handleOut.y = initialHandleOut.y + (targetHandleOut.y - initialHandleOut.y) * t;
+
+                // Also set anchor[0].handleIn to match the same apex as emergingAnchor.handleOut
+                // (They share the same edge emergingAnchor→anchor[0], both point to same apex)
+                // Use the TARGET orthogonal apex, not eased (only emerging anchor's handles ease)
+                const anchor0 = result.anchors[0];
+                anchor0.handleIn.x = (apexX_out - anchor0.pos.x) * params.flow;
+                anchor0.handleIn.y = (apexY_out - anchor0.pos.y) * params.flow;
             }
 
             return result;
