@@ -490,12 +490,13 @@
          * - initialRatio: 0.2 → maintains smooth curve continuity at insertion
          * - Removed result.applyParams() call → was causing abrupt angle changes to ALL anchors
          * - Changed from toOrthogonal to currentAngle → gradually interpolates angle instead of immediate jump
-         * - Angle starts at 50% midpoint → acknowledges new anchor already inserted, not at fromOrthogonal
+         * - Angle calculation: start at halfway between params.angle and toOrthogonal, then interpolate delta to target
+         * - halfwayAngle = params.angle + (toOrthogonal - params.angle) * 0.5
+         * - currentAngle = halfwayAngle + (toOrthogonal - halfwayAngle) * t
          * - Added handle recalculation for ALL anchors using currentAngle → fixes asymmetry
          * - Separate apex calculations for handleIn and handleOut → proper bezier curve formation
          * - Skip emergingAnchor in handle loop → prevents double-setting anchor[0].handleIn
          * - Set anchor[0].handleIn in STEP 3 using interpolated apex → matches emergingAnchor.handleOut apex
-         * - Angle interpolates from midpoint (50%) to toOrthogonal (100%) over the morph
          *
          * Steps:
          * 1. Insert new anchor between anchor[0] and anchor[-1]
@@ -573,9 +574,11 @@
 
             // STEP 2: Gradually normalize all parameters
             if (result.anchors.length === toSides) {
-                // Interpolate angle towards target orthogonal
-                // Start at 50% (midpoint) since we've already added the new anchor
-                const currentAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * (0.5 + t * 0.5);
+                // Calculate halfway point between current angle and target, then interpolate from there
+                // Current angle is params.angle (what user set), target is toOrthogonal
+                const halfwayAngle = params.angle + (toOrthogonal - params.angle) * 0.5;
+                const angleDelta = toOrthogonal - halfwayAngle;
+                const currentAngle = halfwayAngle + angleDelta * t;
 
                 // Move new anchor outward from edge to final position
                 const newAnchor = result.anchors[result.anchors.length - 1];
