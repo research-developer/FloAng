@@ -506,12 +506,29 @@
                 const lastAnchor = result.anchors[fromSides - 1];
                 const firstAnchor = result.anchors[0];
 
-                // Calculate insertion position along the edge
-                const insertT = params.insertionPosition;
-                const newX = lastAnchor.pos.x + (firstAnchor.pos.x - lastAnchor.pos.x) * insertT;
-                const newY = lastAnchor.pos.y + (firstAnchor.pos.y - lastAnchor.pos.y) * insertT;
+                // Calculate along the CIRCULAR ARC, not straight line
+                const center = { x: 400, y: 400 };
+                const radius = 250;
 
-                // Create new anchor at insertion point
+                // Get angles of last and first anchors
+                const lastAngle = Math.atan2(lastAnchor.pos.y - center.y, lastAnchor.pos.x - center.x);
+                const firstAngle = Math.atan2(firstAnchor.pos.y - center.y, firstAnchor.pos.x - center.x);
+
+                // Calculate the arc angle (accounting for wrap-around)
+                let arcAngle = firstAngle - lastAngle;
+                if (arcAngle < 0) {
+                    arcAngle += 2 * Math.PI;
+                }
+
+                // Interpolate along the arc
+                const insertT = params.insertionPosition;
+                const newAngle = lastAngle + arcAngle * insertT;
+
+                // Position new anchor on the circle at the interpolated angle
+                const newX = center.x + radius * Math.cos(newAngle);
+                const newY = center.y + radius * Math.sin(newAngle);
+
+                // Create new anchor at arc position
                 const newAnchor = new AnchorPoint(newX, newY);
 
                 // Initialize with ZERO handles (sharp corner)
