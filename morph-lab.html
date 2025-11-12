@@ -514,6 +514,10 @@
                 // Create new anchor at insertion point
                 const newAnchor = new AnchorPoint(newX, newY);
 
+                // Initialize with ZERO handles (sharp corner)
+                newAnchor.handleIn = { x: 0, y: 0 };
+                newAnchor.handleOut = { x: 0, y: 0 };
+
                 // Insert it at the end (between last and first when path closes)
                 result.anchors.push(newAnchor);
             }
@@ -553,6 +557,21 @@
 
                 // Update all handles to maintain orthogonality
                 result.applyParams(params.flow, currentAngle);
+
+                // STEP 3: Ease new anchor's handles from {0,0} to target values
+                const newAnchorIdx = result.anchors.length - 1;
+                const newAnchor = result.anchors[newAnchorIdx];
+                const targetNewAnchor = to.anchors[newAnchorIdx];
+
+                // Calculate what the handles SHOULD be (from applyParams)
+                const targetHandleIn = { ...newAnchor.handleIn };
+                const targetHandleOut = { ...newAnchor.handleOut };
+
+                // Interpolate from {0, 0} to target handles
+                newAnchor.handleIn.x = targetHandleIn.x * t;
+                newAnchor.handleIn.y = targetHandleIn.y * t;
+                newAnchor.handleOut.x = targetHandleOut.x * t;
+                newAnchor.handleOut.y = targetHandleOut.y * t;
             }
 
             return result;
