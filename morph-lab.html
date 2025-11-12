@@ -489,11 +489,12 @@
          * Value Change Log:
          * - initialRatio: 0.2 → maintains smooth curve continuity at insertion
          * - Removed result.applyParams() call → was causing abrupt angle changes to ALL anchors
-         * - Added handle recalculation for ALL anchors using toOrthogonal → fixes asymmetry
+         * - Changed from toOrthogonal to currentAngle → gradually interpolates angle instead of immediate jump
+         * - Added handle recalculation for ALL anchors using currentAngle → fixes asymmetry
          * - Separate apex calculations for handleIn and handleOut → proper bezier curve formation
          * - Skip emergingAnchor in handle loop → prevents double-setting anchor[0].handleIn
-         * - Set anchor[0].handleIn in STEP 3 using target apex → matches emergingAnchor.handleOut apex
-         * - Only emergingAnchor's handles get eased, anchor[0].handleIn uses full orthogonal
+         * - Set anchor[0].handleIn in STEP 3 using interpolated apex → matches emergingAnchor.handleOut apex
+         * - Both existing and emerging anchors transition from fromOrthogonal to toOrthogonal smoothly
          *
          * Steps:
          * 1. Insert new anchor between anchor[0] and anchor[-1]
@@ -605,13 +606,13 @@
                 // Identify the emerging anchor
                 const newAnchorIdx = result.anchors.length - 1;
 
-                // Recalculate handles for ALL anchors using toOrthogonal angle
+                // Recalculate handles for ALL anchors using interpolated currentAngle
                 // (This maintains symmetry as positions change)
                 for (let i = 0; i < result.anchors.length; i++) {
                     const anchor = result.anchors[i];
                     const nextAnchor = result.anchors[(i + 1) % result.anchors.length];
 
-                    // Calculate handles using toOrthogonal angle
+                    // Calculate handles using interpolated currentAngle
                     const dx = nextAnchor.pos.x - anchor.pos.x;
                     const dy = nextAnchor.pos.y - anchor.pos.y;
                     const baseLength = Math.sqrt(dx * dx + dy * dy);
@@ -620,7 +621,7 @@
                     const perpY = -dx;
                     const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
 
-                    const apexAngle = (toOrthogonal * Math.PI) / 180;
+                    const apexAngle = (currentAngle * Math.PI) / 180;
                     const height = (baseLength / 2) / Math.tan(apexAngle / 2);
                     const midX = (anchor.pos.x + nextAnchor.pos.x) / 2;
                     const midY = (anchor.pos.y + nextAnchor.pos.y) / 2;
@@ -684,12 +685,12 @@
                     initialHandleOut.y = normDy * handleLength;
                 }
 
-                // Calculate target handles for emerging anchor using toOrthogonal angle
+                // Calculate target handles for emerging anchor using interpolated currentAngle
                 // (Do NOT call applyParams - that would change ALL anchors)
                 const prevAnchor = result.anchors[newAnchorIdx - 1];
                 const nextAnchor = result.anchors[0]; // wraps around to first anchor
 
-                const apexAngle = (toOrthogonal * Math.PI) / 180;
+                const apexAngle = (currentAngle * Math.PI) / 180;
 
                 // Calculate handleOut apex (between emergingAnchor and nextAnchor)
                 const dx_out = nextAnchor.pos.x - emergingAnchor.pos.x;
