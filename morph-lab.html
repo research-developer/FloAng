@@ -489,12 +489,12 @@
          * Value Change Log:
          * - initialRatio: 0.2 → maintains smooth curve continuity at insertion
          * - Removed result.applyParams() call → was causing abrupt angle changes to ALL anchors
-         * - Halfway interpolation ONLY for edges adjacent to emerging anchor
+         * - Halfway interpolation ONLY for BOTH edges adjacent to emerging anchor
          * - Existing edges maintain their current angle (params.angle)
          * - emergingEdgeAngle = halfwayAngle + (toOrthogonal - halfwayAngle) * t
          * - halfwayAngle = params.angle + (toOrthogonal - params.angle) * 0.5
-         * - Edge (newAnchorIdx-1)→newAnchorIdx uses emergingEdgeAngle
-         * - Edge newAnchorIdx→0 uses emergingEdgeAngle
+         * - Edge (newAnchorIdx-1)→newAnchorIdx uses emergingEdgeAngle (incoming edge)
+         * - Edge newAnchorIdx→0 uses emergingEdgeAngle (outgoing edge)
          * - All other edges use params.angle (no interpolation)
          * - Separate apex calculations for handleIn and handleOut → proper bezier curve formation
          * - Skip emergingAnchor in handle loop → prevents double-setting anchor[0].handleIn
@@ -621,9 +621,11 @@
                     const nextAnchor = result.anchors[(i + 1) % result.anchors.length];
 
                     // Determine which angle to use for this edge
-                    // Edge (newAnchorIdx-1) → newAnchorIdx uses halfway interpolation
+                    // BOTH edges adjacent to emerging anchor use halfway interpolation:
+                    // - Edge (newAnchorIdx-1) → newAnchorIdx
+                    // - Edge newAnchorIdx → 0
                     // All other edges use params.angle
-                    const edgeAngle = (i === newAnchorIdx - 1) ? emergingEdgeAngle : params.angle;
+                    const edgeAngle = (i === newAnchorIdx - 1 || i === newAnchorIdx) ? emergingEdgeAngle : params.angle;
 
                     // Calculate handles using the appropriate angle
                     const dx = nextAnchor.pos.x - anchor.pos.x;
