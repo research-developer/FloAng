@@ -643,16 +643,18 @@
                     const apexX = midX + (perpX / perpLength) * height;
                     const apexY = midY + (perpY / perpLength) * height;
 
-                    // Skip emerging anchor entirely - STEP 3 handles its handles
+                    // Set handles for all edges except emerging anchor's own handles
+                    // Emerging anchor's handles are set in STEP 3
                     if (i !== newAnchorIdx) {
+                        // Set handleOut for this anchor
                         anchor.handleOut.x = (apexX - anchor.pos.x) * params.flow;
                         anchor.handleOut.y = (apexY - anchor.pos.y) * params.flow;
+                    }
 
-                        // Don't set handleIn for emerging anchor - STEP 3 handles it
-                        if ((i + 1) % result.anchors.length !== newAnchorIdx) {
-                            nextAnchor.handleIn.x = (apexX - nextAnchor.pos.x) * params.flow;
-                            nextAnchor.handleIn.y = (apexY - nextAnchor.pos.y) * params.flow;
-                        }
+                    // Set handleIn for next anchor (unless it's the emerging anchor)
+                    if ((i + 1) % result.anchors.length !== newAnchorIdx) {
+                        nextAnchor.handleIn.x = (apexX - nextAnchor.pos.x) * params.flow;
+                        nextAnchor.handleIn.y = (apexY - nextAnchor.pos.y) * params.flow;
                     }
                 }
 
