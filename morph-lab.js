@@ -812,13 +812,19 @@ class SnapshotDebugger {
 
         console.log('SVG comparison:\n' + svg);
 
-        // Save to file for viewing
-        const blob = new Blob([svg], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'morph-snapshots.svg';
-        a.click();
+        // Save to file for viewing (only if checkbox is checked)
+        const autoExportCheckbox = document.getElementById('auto-export-svg');
+        if (autoExportCheckbox && autoExportCheckbox.checked) {
+            const blob = new Blob([svg], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'morph-snapshots.svg';
+            a.click();
+            console.log('📥 Auto-exported morph-snapshots.svg');
+        } else {
+            console.log('ℹ️  Auto-export disabled. SVG available in console above.');
+        }
     }
 
     reset() {

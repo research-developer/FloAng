@@ -86,8 +86,8 @@ class DebugUI {
         const padding = 10;
         const lineHeight = 18;
 
-        // Background
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        // Background - semi-transparent
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         this.ctx.fillRect(x, y, 320, 220);
 
         // Border
@@ -161,8 +161,8 @@ class DebugUI {
         const width = this.canvas.width - 20;
         const height = this.scrubberHeight;
 
-        // Background
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        // Background - semi-transparent
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         this.ctx.fillRect(x, y, width, height);
 
         // Border
