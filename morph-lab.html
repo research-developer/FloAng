@@ -763,13 +763,7 @@
         const ctx = canvas.getContext('2d');
 
         let currentShape = null;
-        let morphState = {
-            active: false,
-            startTime: 0,
-            fromShape: null,
-            toShape: null,
-            progress: 0
-        };
+        let morphAnimation = new MorphAnimation();
 
         // Parameters (read from UI)
         const params = {
@@ -802,7 +796,7 @@
             document.getElementById('sides').addEventListener('input', (e) => {
                 params.sides = parseInt(e.target.value);
                 document.getElementById('sides-value').textContent = params.sides;
-                if (!morphState.active) {
+                if (!morphAnimation.active) {
                     currentShape = Shape.createPolygon(params.sides, 250, 400, 400, 0);
                     currentShape.applyParams(params.flow, params.angle);
                 }
@@ -811,7 +805,7 @@
             document.getElementById('flow').addEventListener('input', (e) => {
                 params.flow = parseFloat(e.target.value);
                 document.getElementById('flow-value').textContent = params.flow.toFixed(2);
-                if (!morphState.active) {
+                if (!morphAnimation.active) {
                     currentShape.applyParams(params.flow, params.angle);
                 }
             });
@@ -819,7 +813,7 @@
             document.getElementById('angle').addEventListener('input', (e) => {
                 params.angle = parseFloat(e.target.value);
                 document.getElementById('angle-value').textContent = params.angle + '°';
-                if (!morphState.active) {
+                if (!morphAnimation.active) {
                     currentShape.applyParams(params.flow, params.angle);
                 }
             });
@@ -971,25 +965,20 @@
         }
 
         function startMorph() {
-            if (morphState.active) return;
+            if (morphAnimation.active) return;
 
             const fromSides = params.sides;
             const toSides = fromSides + 1;
-
-            // Clone current shape as starting point
-            morphState.fromShape = currentShape.clone();
 
             // CAPTURE SNAPSHOT: BEFORE
             snapshots.before = captureSnapshot(currentShape, 'BEFORE');
 
             // Create target shape with n+1 sides
-            morphState.toShape = Shape.createPolygon(toSides, 250, 400, 400, 0);
-            morphState.toShape.applyParams(params.flow, params.angle);
+            const toShape = Shape.createPolygon(toSides, 250, 400, 400, 0);
+            toShape.applyParams(params.flow, params.angle);
 
             // Start morph animation
-            morphState.active = true;
-            morphState.startTime = performance.now();
-            morphState.progress = 0;
+            morphAnimation.start(currentShape, toShape, params);
 
             // Reset snapshot flags
             snapshots.justAfter = null;
@@ -999,29 +988,24 @@
         }
 
         function updateMorph(timestamp) {
-            if (!morphState.active) return;
+            if (!morphAnimation.active) return;
 
-            const elapsed = timestamp - morphState.startTime;
-            morphState.progress = Math.min(elapsed / params.duration, 1);
-            const easedProgress = easeInOutCubic(morphState.progress, params.easingPower);
-
-            // TODO: Implement continuous morph algorithm here
-            // For now, just lerp the shapes
-            currentShape = lerpShapes(morphState.fromShape, morphState.toShape, easedProgress);
+            // Update animation and get interpolated shape
+            currentShape = morphAnimation.update(timestamp);
 
             // CAPTURE SNAPSHOT: JUST AFTER START (around 1-2% progress)
-            if (!snapshots.justAfter && morphState.progress > 0.01 && morphState.progress < 0.03) {
+            if (!snapshots.justAfter && morphAnimation.progress > 0.01 && morphAnimation.progress < 0.03) {
                 snapshots.justAfter = captureSnapshot(currentShape, 'JUST AFTER');
-                console.log('Captured JUST AFTER snapshot at progress:', (morphState.progress * 100).toFixed(1) + '%');
+                console.log('Captured JUST AFTER snapshot at progress:', (morphAnimation.progress * 100).toFixed(1) + '%');
             }
 
             // Update metrics
-            document.getElementById('progress-metric').textContent = (morphState.progress * 100).toFixed(1) + '%';
+            document.getElementById('progress-metric').textContent = (morphAnimation.progress * 100).toFixed(1) + '%';
             document.getElementById('symmetry-metric').textContent = currentShape.calculateSymmetry().toFixed(4);
             document.getElementById('anchor-metric').textContent = currentShape.anchors.length;
 
             // Check if complete
-            if (morphState.progress >= 1) {
+            if (morphAnimation.isComplete()) {
                 // CAPTURE SNAPSHOT: FINISHED
                 snapshots.finished = captureSnapshot(currentShape, 'FINISHED');
                 console.log('Captured FINISHED snapshot');
@@ -1029,7 +1013,6 @@
                 // Display all snapshots
                 displaySnapshots();
 
-                morphState.active = false;
                 params.sides++;
                 document.getElementById('sides').value = params.sides;
                 document.getElementById('sides-value').textContent = params.sides;
@@ -1037,291 +1020,10 @@
             }
         }
 
-        /**
-         * Morph algorithm: Insert new anchor and normalize to orthogonality
-         *
-         * Value Change Log:
-         * - initialRatio: 0.2 → maintains smooth curve continuity at insertion
-         * - Removed result.applyParams() call → was causing abrupt angle changes to ALL anchors
-         * - ALL edges now transition toward toOrthogonal angle
-         * - currentAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * t (for non-emerging edges)
-         * - emergingEdgeAngle = halfwayAngle + (toOrthogonal - halfwayAngle) * t (for emerging edges)
-         * - halfwayAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * 0.5
-         * - Edge (newAnchorIdx-1)→newAnchorIdx uses emergingEdgeAngle (starts at halfway)
-         * - Edge newAnchorIdx→0 uses emergingEdgeAngle (starts at halfway)
-         * - All other edges use currentAngle (starts at fromOrthogonal, transitions to toOrthogonal)
-         * - Final state: ALL edges reach toOrthogonal angle, forming perfect T-shapes at each anchor
-         * - Separate apex calculations for handleIn and handleOut → proper bezier curve formation
-         * - Set anchor[0].handleIn in STEP 3 using emergingEdgeAngle → matches emergingAnchor.handleOut apex
-         *
-         * Steps:
-         * 1. Insert new anchor between anchor[0] and anchor[-1]
-         * 2. Gradually normalize all parameters (positions + angles) to maintain orthogonality
-         */
-        function lerpShapes(from, to, t) {
-            const fromSides = from.anchors.length;
-            const toSides = fromSides + 1;
+        // lerpShapes function has been moved to MorphAnimation._interpolateShapes()
+        // Legacy function removed - all morph logic is now in MorphAnimation class
 
-            // Calculate orthogonal angles
-            const fromOrthogonal = GeometryUtils.calculateOrthogonalAngle(fromSides);
-            const toOrthogonal = GeometryUtils.calculateOrthogonalAngle(toSides);
-
-            // Create result shape starting from 'from'
-            const result = from.clone();
-
-            // STEP 1: Insert new anchor between anchor[0] and anchor[-1]
-            if (t > 0 && result.anchors.length === fromSides) {
-                const lastAnchor = result.anchors[fromSides - 1];
-                const firstAnchor = result.anchors[0];
-
-                // Sample the BEZIER CURVE between last and first anchors
-                // This is the actual visible path, not the circular arc!
-                const insertT = params.insertionPosition;
-
-                // Get the bezier control points
-                const p0 = lastAnchor.pos;
-                const cp1 = lastAnchor.getHandleOutAbs();
-                const cp2 = firstAnchor.getHandleInAbs();
-                const p3 = firstAnchor.pos;
-
-                // Evaluate cubic bezier at t to find point along the curve
-                const newPos = GeometryUtils.evaluateBezier(p0, cp1, cp2, p3, insertT);
-
-                // Create new anchor at the point along the bezier curve
-                const newAnchor = new AnchorPoint(newPos.x, newPos.y);
-
-                // Calculate initial handles using De Casteljau subdivision
-                // This maintains curve continuity when splitting the bezier
-
-                // Derivative at t (tangent direction)
-                const tangent = GeometryUtils.calculateBezierTangent(p0, cp1, cp2, p3, insertT);
-
-                // Set handles as a ratio of the tangent direction
-                // Start with a small ratio that will grow to final values
-                const initialRatio = 0.2; // Start at 20% of final handle length
-                const handleLength = tangent.length * insertT * initialRatio;
-
-                // Normalize tangent and scale
-                if (tangent.length > 0) {
-                    const normDx = tangent.dx / tangent.length;
-                    const normDy = tangent.dy / tangent.length;
-
-                    newAnchor.handleIn.x = -normDx * handleLength;
-                    newAnchor.handleIn.y = -normDy * handleLength;
-                    newAnchor.handleOut.x = normDx * handleLength;
-                    newAnchor.handleOut.y = normDy * handleLength;
-                } else {
-                    newAnchor.handleIn = { x: 0, y: 0 };
-                    newAnchor.handleOut = { x: 0, y: 0 };
-                }
-
-                // Insert it at the end (between last and first when path closes)
-                result.anchors.push(newAnchor);
-
-                // IMMEDIATELY store the handle values on the ORIGINAL 'from' shape anchors
-                // This persists across frames since 'result' is cloned from 'from' each frame
-                const newAnchorIdx = result.anchors.length - 1;
-                if (!from.anchors[newAnchorIdx - 1]._storedHandleOut) {
-                    from.anchors[newAnchorIdx - 1]._storedHandleOut = {
-                        x: result.anchors[newAnchorIdx - 1].handleOut.x,
-                        y: result.anchors[newAnchorIdx - 1].handleOut.y
-                    };
-                    console.log(`[INIT] Stored anchor[${newAnchorIdx - 1}].handleOut:`,
-                        from.anchors[newAnchorIdx - 1]._storedHandleOut);
-                }
-                if (!from.anchors[0]._storedHandleIn) {
-                    from.anchors[0]._storedHandleIn = {
-                        x: result.anchors[0].handleIn.x,
-                        y: result.anchors[0].handleIn.y
-                    };
-                    console.log(`[INIT] Stored anchor[0].handleIn:`,
-                        from.anchors[0]._storedHandleIn);
-                }
-
-                // Copy stored values to result anchors for this frame
-                result.anchors[newAnchorIdx - 1]._storedHandleOut = from.anchors[newAnchorIdx - 1]._storedHandleOut;
-                result.anchors[0]._storedHandleIn = from.anchors[0]._storedHandleIn;
-            }
-
-            // STEP 2: Gradually normalize all parameters
-            if (result.anchors.length === toSides) {
-                // ALL edges transition toward toOrthogonal at the same rate
-                // No special treatment for edges adjacent to emerging anchor
-                const currentAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * t;
-
-                // Debug logging at key moments
-                if (t < 0.01 || t > 0.99) {
-                    console.log(`t=${t.toFixed(3)}: fromOrth=${fromOrthogonal.toFixed(1)}° toOrth=${toOrthogonal.toFixed(1)}° currentAngle=${currentAngle.toFixed(1)}°`);
-                }
-
-                // Move new anchor outward from edge to final position
-                const newAnchor = result.anchors[result.anchors.length - 1];
-                const targetAnchor = to.anchors[to.anchors.length - 1];
-
-                // Lerp position towards target
-                newAnchor.pos.x = newAnchor.pos.x + (targetAnchor.pos.x - newAnchor.pos.x) * t * params.emergenceSpeed;
-                newAnchor.pos.y = newAnchor.pos.y + (targetAnchor.pos.y - newAnchor.pos.y) * t * params.emergenceSpeed;
-
-                // Gradually adjust all anchor positions to maintain symmetry
-                // Redistribute anchors evenly around the circle
-                const radius = 250; // Same as initial creation
-                const center = { x: 400, y: 400 };
-                const angleStep = (2 * Math.PI) / toSides;
-
-                for (let i = 0; i < result.anchors.length; i++) {
-                    const targetAngle = i * angleStep;
-                    const targetX = center.x + radius * Math.cos(targetAngle);
-                    const targetY = center.y + radius * Math.sin(targetAngle);
-
-                    const currentAnchor = result.anchors[i];
-
-                    // Smoothly interpolate towards target position
-                    // Use symmetry weight to control how aggressively we enforce symmetry
-                    const normalizationStrength = t * params.symmetryWeight;
-                    currentAnchor.pos.x = currentAnchor.pos.x + (targetX - currentAnchor.pos.x) * normalizationStrength;
-                    currentAnchor.pos.y = currentAnchor.pos.y + (targetY - currentAnchor.pos.y) * normalizationStrength;
-                }
-
-                // Identify the emerging anchor
-                const newAnchorIdx = result.anchors.length - 1;
-
-                // Recalculate handles for ALL edges
-                for (let i = 0; i < result.anchors.length; i++) {
-                    const anchor = result.anchors[i];
-                    const nextAnchor = result.anchors[(i + 1) % result.anchors.length];
-
-                    // Identify edges adjacent to emerging anchor
-                    const isEdgeBeforeEmerging = (i === newAnchorIdx - 1);
-                    const isEdgeAfterEmerging = (i === newAnchorIdx);
-
-                    // All edges use currentAngle
-                    const edgeAngle = currentAngle;
-
-                    // Calculate target handles using angle-based formula
-                    const apex = GeometryUtils.calculateApex(anchor.pos, nextAnchor.pos, edgeAngle);
-                    const handles = GeometryUtils.calculateHandlesFromApex(
-                        anchor.pos,
-                        nextAnchor.pos,
-                        apex,
-                        params.flow
-                    );
-                    const targetHandleOut = handles.handleOut;
-                    const targetHandleIn = handles.handleIn;
-
-                    // For edges adjacent to emerging anchor, interpolate from stored initial values
-                    // For other edges (including emerging anchor itself), set directly to target
-                    if (isEdgeBeforeEmerging && anchor._storedHandleOut) {
-                        // Edge before emerging: interpolate anchor[newAnchorIdx-1].handleOut
-                        anchor.handleOut.x = anchor._storedHandleOut.x + (targetHandleOut.x - anchor._storedHandleOut.x) * t;
-                        anchor.handleOut.y = anchor._storedHandleOut.y + (targetHandleOut.y - anchor._storedHandleOut.y) * t;
-
-                        if (t < 0.02 || t > 0.98) {
-                            console.log(`[t=${t.toFixed(3)}] anchor[${i}].handleOut: stored=(${anchor._storedHandleOut.x.toFixed(2)},${anchor._storedHandleOut.y.toFixed(2)}) target=(${targetHandleOut.x.toFixed(2)},${targetHandleOut.y.toFixed(2)}) result=(${anchor.handleOut.x.toFixed(2)},${anchor.handleOut.y.toFixed(2)})`);
-                        }
-                    } else if (!isEdgeAfterEmerging) {
-                        // Non-adjacent edges: set directly
-                        anchor.handleOut.x = targetHandleOut.x;
-                        anchor.handleOut.y = targetHandleOut.y;
-                    }
-                    // Note: emerging anchor's handleOut is handled in STEP 3
-
-                    if (isEdgeAfterEmerging && nextAnchor._storedHandleIn) {
-                        // Edge after emerging: interpolate anchor[0].handleIn
-                        nextAnchor.handleIn.x = nextAnchor._storedHandleIn.x + (targetHandleIn.x - nextAnchor._storedHandleIn.x) * t;
-                        nextAnchor.handleIn.y = nextAnchor._storedHandleIn.y + (targetHandleIn.y - nextAnchor._storedHandleIn.y) * t;
-
-                        if (t < 0.02 || t > 0.98) {
-                            console.log(`[t=${t.toFixed(3)}] anchor[${(i+1) % result.anchors.length}].handleIn: stored=(${nextAnchor._storedHandleIn.x.toFixed(2)},${nextAnchor._storedHandleIn.y.toFixed(2)}) target=(${targetHandleIn.x.toFixed(2)},${targetHandleIn.y.toFixed(2)}) result=(${nextAnchor.handleIn.x.toFixed(2)},${nextAnchor.handleIn.y.toFixed(2)})`);
-                        }
-                    } else if (!isEdgeBeforeEmerging) {
-                        // Non-adjacent edges: set directly
-                        nextAnchor.handleIn.x = targetHandleIn.x;
-                        nextAnchor.handleIn.y = targetHandleIn.y;
-                    }
-                    // Note: emerging anchor's handleIn is handled in STEP 3
-                }
-
-                // STEP 3: Ease new anchor's handles from tangent to orthogonal
-                const emergingAnchor = result.anchors[newAnchorIdx];
-
-                // Calculate what the INITIAL tangent-based handles were
-                // (Re-calculate from scratch each frame to ensure consistency)
-                const lastAnchor = result.anchors[newAnchorIdx - 1];
-                const firstAnchor = result.anchors[0];
-
-                const p0 = lastAnchor.pos;
-                const cp1Initial = {
-                    x: p0.x + lastAnchor.handleOut.x,
-                    y: p0.y + lastAnchor.handleOut.y
-                };
-                const cp2Initial = {
-                    x: firstAnchor.pos.x + firstAnchor.handleIn.x,
-                    y: firstAnchor.pos.y + firstAnchor.handleIn.y
-                };
-                const p3 = firstAnchor.pos;
-
-                const insertT = params.insertionPosition;
-
-                // Tangent at insertion point
-                const tangent = GeometryUtils.calculateBezierTangent(p0, cp1Initial, cp2Initial, p3, insertT);
-                const initialHandleIn = { x: 0, y: 0 };
-                const initialHandleOut = { x: 0, y: 0 };
-
-                if (tangent.length > 0) {
-                    const normDx = tangent.dx / tangent.length;
-                    const normDy = tangent.dy / tangent.length;
-                    const initialRatio = 0.2;
-                    const handleLength = tangent.length * insertT * initialRatio;
-
-                    initialHandleIn.x = -normDx * handleLength;
-                    initialHandleIn.y = -normDy * handleLength;
-                    initialHandleOut.x = normDx * handleLength;
-                    initialHandleOut.y = normDy * handleLength;
-                }
-
-                // Calculate target handles for emerging anchor using currentAngle
-                // (Do NOT call applyParams - that would change ALL anchors)
-                const prevAnchor = result.anchors[newAnchorIdx - 1];
-                const nextAnchor = result.anchors[0]; // wraps around to first anchor
-
-                // Calculate handleOut apex (between emergingAnchor and nextAnchor)
-                const apexOut = GeometryUtils.calculateApex(emergingAnchor.pos, nextAnchor.pos, currentAngle);
-
-                // Calculate handleIn apex (between prevAnchor and emergingAnchor)
-                const apexIn = GeometryUtils.calculateApex(prevAnchor.pos, emergingAnchor.pos, currentAngle);
-
-                // Calculate target orthogonal handles
-                const targetHandleOut = {
-                    x: (apexOut.x - emergingAnchor.pos.x) * params.flow,
-                    y: (apexOut.y - emergingAnchor.pos.y) * params.flow
-                };
-                const targetHandleIn = {
-                    x: (apexIn.x - emergingAnchor.pos.x) * params.flow,
-                    y: (apexIn.y - emergingAnchor.pos.y) * params.flow
-                };
-
-                // Interpolate from initial tangent-based to final orthogonal
-                emergingAnchor.handleIn.x = initialHandleIn.x + (targetHandleIn.x - initialHandleIn.x) * t;
-                emergingAnchor.handleIn.y = initialHandleIn.y + (targetHandleIn.y - initialHandleIn.y) * t;
-                emergingAnchor.handleOut.x = initialHandleOut.x + (targetHandleOut.x - initialHandleOut.x) * t;
-                emergingAnchor.handleOut.y = initialHandleOut.y + (targetHandleOut.y - initialHandleOut.y) * t;
-
-                // Also set anchor[0].handleIn to match the same apex as emergingAnchor.handleOut
-                // (They share the same edge emergingAnchor→anchor[0], both point to same apex)
-                // Use the TARGET orthogonal apex, not eased (only emerging anchor's handles ease)
-                const anchor0 = result.anchors[0];
-                anchor0.handleIn.x = (apexOut.x - anchor0.pos.x) * params.flow;
-                anchor0.handleIn.y = (apexOut.y - anchor0.pos.y) * params.flow;
-            }
-
-            return result;
-        }
-
-        function easeInOutCubic(t, power) {
-            return t < 0.5
-                ? Math.pow(2, power - 1) * Math.pow(t, power)
-                : 1 - Math.pow(-2 * t + 2, power) / 2;
-        }
+        // Keeping this as a wrapper for backwards compatibility if needed
 
         // ===== RENDERING =====
 
@@ -1331,7 +1033,7 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Update morph if active
-            if (morphState.active) {
+            if (morphAnimation.active) {
                 updateMorph(timestamp);
             }
 
@@ -1399,7 +1101,7 @@
         // ===== UI ACTIONS =====
 
         function resetState() {
-            morphState.active = false;
+            morphAnimation.active = false;
             currentShape = Shape.createPolygon(params.sides, 250, 400, 400, 0);
             currentShape.applyParams(params.flow, params.angle);
         }
