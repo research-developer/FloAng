@@ -302,24 +302,54 @@
                 }
             }
 
-            // Calculate symmetry score
+            // Calculate comprehensive symmetry score
             calculateSymmetry() {
                 if (this.anchors.length < 3) return 0;
 
-                // Measure variance in edge lengths
+                let totalError = 0;
+                const n = this.anchors.length;
+
+                // 1. Check edge length variance
                 const edgeLengths = [];
-                for (let i = 0; i < this.anchors.length; i++) {
+                for (let i = 0; i < n; i++) {
                     const a1 = this.anchors[i];
-                    const a2 = this.anchors[(i + 1) % this.anchors.length];
+                    const a2 = this.anchors[(i + 1) % n];
                     const dx = a2.pos.x - a1.pos.x;
                     const dy = a2.pos.y - a1.pos.y;
                     edgeLengths.push(Math.sqrt(dx * dx + dy * dy));
                 }
+                const meanEdgeLength = edgeLengths.reduce((a, b) => a + b, 0) / n;
+                const edgeLengthVariance = edgeLengths.reduce((sum, len) =>
+                    sum + Math.pow(len - meanEdgeLength, 2), 0) / n;
+                totalError += edgeLengthVariance;
 
-                const mean = edgeLengths.reduce((a, b) => a + b, 0) / edgeLengths.length;
-                const variance = edgeLengths.reduce((sum, len) => sum + Math.pow(len - mean, 2), 0) / edgeLengths.length;
+                // 2. Check angular distances from center
+                const center = { x: 400, y: 400 }; // Known center
+                const distances = [];
+                for (let i = 0; i < n; i++) {
+                    const dx = this.anchors[i].pos.x - center.x;
+                    const dy = this.anchors[i].pos.y - center.y;
+                    distances.push(Math.sqrt(dx * dx + dy * dy));
+                }
+                const meanDistance = distances.reduce((a, b) => a + b, 0) / n;
+                const distanceVariance = distances.reduce((sum, dist) =>
+                    sum + Math.pow(dist - meanDistance, 2), 0) / n;
+                totalError += distanceVariance;
 
-                return variance;
+                // 3. Check handle magnitude variance (should be similar)
+                const handleMagnitudes = [];
+                for (let i = 0; i < n; i++) {
+                    const anchor = this.anchors[i];
+                    const magIn = Math.sqrt(anchor.handleIn.x ** 2 + anchor.handleIn.y ** 2);
+                    const magOut = Math.sqrt(anchor.handleOut.x ** 2 + anchor.handleOut.y ** 2);
+                    handleMagnitudes.push(magIn, magOut);
+                }
+                const meanHandleMag = handleMagnitudes.reduce((a, b) => a + b, 0) / handleMagnitudes.length;
+                const handleVariance = handleMagnitudes.reduce((sum, mag) =>
+                    sum + Math.pow(mag - meanHandleMag, 2), 0) / handleMagnitudes.length;
+                totalError += handleVariance * 0.1; // Less weight on handles
+
+                return totalError;
             }
 
             clone() {
@@ -428,6 +458,123 @@
 
         // ===== MORPH LOGIC =====
 
+        // ===== SNAPSHOT DEBUGGING =====
+        const snapshots = {
+            before: null,
+            justAfter: null,
+            finished: null
+        };
+
+        function captureSnapshot(shape, label) {
+            if (!shape || shape.anchors.length < 2) return null;
+
+            // Create SVG path data
+            let pathData = `M ${shape.anchors[0].pos.x} ${shape.anchors[0].pos.y}`;
+
+            for (let i = 0; i < shape.anchors.length; i++) {
+                const anchor = shape.anchors[i];
+                const nextAnchor = shape.anchors[(i + 1) % shape.anchors.length];
+                const cp1 = anchor.getHandleOutAbs();
+                const cp2 = nextAnchor.getHandleInAbs();
+
+                pathData += ` C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${nextAnchor.pos.x} ${nextAnchor.pos.y}`;
+            }
+            pathData += ' Z';
+
+            // Capture relative handle vectors for each anchor
+            const anchorData = [];
+            for (let i = 0; i < shape.anchors.length; i++) {
+                const anchor = shape.anchors[i];
+                anchorData.push({
+                    index: i,
+                    pos: { x: anchor.pos.x.toFixed(2), y: anchor.pos.y.toFixed(2) },
+                    handleIn: { x: anchor.handleIn.x.toFixed(4), y: anchor.handleIn.y.toFixed(4) },
+                    handleOut: { x: anchor.handleOut.x.toFixed(4), y: anchor.handleOut.y.toFixed(4) }
+                });
+            }
+
+            // Calculate edge angles
+            const edgeAngles = [];
+            for (let i = 0; i < shape.anchors.length; i++) {
+                const anchor = shape.anchors[i];
+                const nextAnchor = shape.anchors[(i + 1) % shape.anchors.length];
+                const dx = nextAnchor.pos.x - anchor.pos.x;
+                const dy = nextAnchor.pos.y - anchor.pos.y;
+                const baseLength = Math.sqrt(dx * dx + dy * dy);
+
+                const cp1 = anchor.getHandleOutAbs();
+                const height = Math.abs((cp1.y - anchor.pos.y) * dx - (cp1.x - anchor.pos.x) * dy) / baseLength;
+                const angle = Math.atan((2 * height) / (baseLength / 2)) * (180 / Math.PI);
+                edgeAngles.push(angle.toFixed(2));
+            }
+
+            return {
+                label,
+                pathData,
+                anchors: shape.anchors.length,
+                symmetry: shape.calculateSymmetry().toFixed(4),
+                edgeAngles: edgeAngles.join(', '),
+                anchorData: anchorData,
+                params: {
+                    flow: params.flow.toFixed(2),
+                    angle: params.angle.toFixed(0)
+                }
+            };
+        }
+
+        function displaySnapshots() {
+            console.log('\n=== SNAPSHOT COMPARISON ===');
+            console.log('BEFORE:', snapshots.before);
+            console.log('JUST AFTER:', snapshots.justAfter);
+            console.log('FINISHED:', snapshots.finished);
+
+            // Create visual comparison with handle data
+            const svg = `
+<svg width="1400" height="500" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1400" height="500" fill="#0a0a0a"/>
+
+    <!-- Before -->
+    <g transform="translate(200, 200)">
+        <path d="${snapshots.before?.pathData || ''}" fill="rgba(135,206,235,0.3)" stroke="#4682b4" stroke-width="2"/>
+        <text x="0" y="-170" fill="#fff" text-anchor="middle" font-size="14" font-weight="bold">BEFORE</text>
+        <text x="0" y="-150" fill="#aaa" text-anchor="middle" font-size="10">Anchors: ${snapshots.before?.anchors || 0}</text>
+        <text x="0" y="-135" fill="#aaa" text-anchor="middle" font-size="10">Symmetry: ${snapshots.before?.symmetry || 0}</text>
+        <text x="0" y="-120" fill="#aaa" text-anchor="middle" font-size="10">Flow: ${snapshots.before?.params.flow || 0}, Angle: ${snapshots.before?.params.angle || 0}°</text>
+        <text x="0" y="-105" fill="#aaa" text-anchor="middle" font-size="9">Angles: ${snapshots.before?.edgeAngles || ''}</text>
+    </g>
+
+    <!-- Just After -->
+    <g transform="translate(600, 200)">
+        <path d="${snapshots.justAfter?.pathData || ''}" fill="rgba(255,165,0,0.3)" stroke="#ff8c00" stroke-width="2"/>
+        <text x="0" y="-170" fill="#fff" text-anchor="middle" font-size="14" font-weight="bold">JUST AFTER START</text>
+        <text x="0" y="-150" fill="#aaa" text-anchor="middle" font-size="10">Anchors: ${snapshots.justAfter?.anchors || 0}</text>
+        <text x="0" y="-135" fill="#aaa" text-anchor="middle" font-size="10">Symmetry: ${snapshots.justAfter?.symmetry || 0}</text>
+        <text x="0" y="-120" fill="#aaa" text-anchor="middle" font-size="10">Flow: ${snapshots.justAfter?.params.flow || 0}, Angle: ${snapshots.justAfter?.params.angle || 0}°</text>
+        <text x="0" y="-105" fill="#aaa" text-anchor="middle" font-size="9">Angles: ${snapshots.justAfter?.edgeAngles || ''}</text>
+    </g>
+
+    <!-- Finished -->
+    <g transform="translate(1000, 200)">
+        <path d="${snapshots.finished?.pathData || ''}" fill="rgba(0,255,0,0.3)" stroke="#00ff00" stroke-width="2"/>
+        <text x="0" y="-170" fill="#fff" text-anchor="middle" font-size="14" font-weight="bold">FINISHED</text>
+        <text x="0" y="-150" fill="#aaa" text-anchor="middle" font-size="10">Anchors: ${snapshots.finished?.anchors || 0}</text>
+        <text x="0" y="-135" fill="#aaa" text-anchor="middle" font-size="10">Symmetry: ${snapshots.finished?.symmetry || 0}</text>
+        <text x="0" y="-120" fill="#aaa" text-anchor="middle" font-size="10">Flow: ${snapshots.finished?.params.flow || 0}, Angle: ${snapshots.finished?.params.angle || 0}°</text>
+        <text x="0" y="-105" fill="#aaa" text-anchor="middle" font-size="9">Angles: ${snapshots.finished?.edgeAngles || ''}</text>
+    </g>
+</svg>`;
+
+            console.log('SVG comparison:\n' + svg);
+
+            // Save to file for viewing
+            const blob = new Blob([svg], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'morph-snapshots.svg';
+            a.click();
+        }
+
         function startMorph() {
             if (morphState.active) return;
 
@@ -437,6 +584,9 @@
             // Clone current shape as starting point
             morphState.fromShape = currentShape.clone();
 
+            // CAPTURE SNAPSHOT: BEFORE
+            snapshots.before = captureSnapshot(currentShape, 'BEFORE');
+
             // Create target shape with n+1 sides
             morphState.toShape = Shape.createPolygon(toSides, 250, 400, 400, 0);
             morphState.toShape.applyParams(params.flow, params.angle);
@@ -445,6 +595,10 @@
             morphState.active = true;
             morphState.startTime = performance.now();
             morphState.progress = 0;
+
+            // Reset snapshot flags
+            snapshots.justAfter = null;
+            snapshots.finished = null;
 
             console.log(`Starting morph: ${fromSides} → ${toSides} sides`);
         }
@@ -460,6 +614,12 @@
             // For now, just lerp the shapes
             currentShape = lerpShapes(morphState.fromShape, morphState.toShape, easedProgress);
 
+            // CAPTURE SNAPSHOT: JUST AFTER START (around 1-2% progress)
+            if (!snapshots.justAfter && morphState.progress > 0.01 && morphState.progress < 0.03) {
+                snapshots.justAfter = captureSnapshot(currentShape, 'JUST AFTER');
+                console.log('Captured JUST AFTER snapshot at progress:', (morphState.progress * 100).toFixed(1) + '%');
+            }
+
             // Update metrics
             document.getElementById('progress-metric').textContent = (morphState.progress * 100).toFixed(1) + '%';
             document.getElementById('symmetry-metric').textContent = currentShape.calculateSymmetry().toFixed(4);
@@ -467,6 +627,13 @@
 
             // Check if complete
             if (morphState.progress >= 1) {
+                // CAPTURE SNAPSHOT: FINISHED
+                snapshots.finished = captureSnapshot(currentShape, 'FINISHED');
+                console.log('Captured FINISHED snapshot');
+
+                // Display all snapshots
+                displaySnapshots();
+
                 morphState.active = false;
                 params.sides++;
                 document.getElementById('sides').value = params.sides;
