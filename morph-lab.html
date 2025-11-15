@@ -744,18 +744,13 @@
 
             // STEP 2: Gradually normalize all parameters
             if (result.anchors.length === toSides) {
-                // ALL edges transition toward toOrthogonal
-                // Edges adjacent to emerging anchor start at halfway point
-                // All other edges start at fromOrthogonal (current params.angle)
+                // ALL edges transition toward toOrthogonal at the same rate
+                // No special treatment for edges adjacent to emerging anchor
                 const currentAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * t;
-
-                // For edges adjacent to emerging anchor, start at halfway point
-                const halfwayAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * 0.5;
-                const emergingEdgeAngle = halfwayAngle + (toOrthogonal - halfwayAngle) * t;
 
                 // Debug logging at key moments
                 if (t < 0.01 || t > 0.99) {
-                    console.log(`t=${t.toFixed(3)}: fromOrth=${fromOrthogonal.toFixed(1)}° toOrth=${toOrthogonal.toFixed(1)}° currentAngle=${currentAngle.toFixed(1)}° emergingAngle=${emergingEdgeAngle.toFixed(1)}°`);
+                    console.log(`t=${t.toFixed(3)}: fromOrth=${fromOrthogonal.toFixed(1)}° toOrth=${toOrthogonal.toFixed(1)}° currentAngle=${currentAngle.toFixed(1)}°`);
                 }
 
                 // Move new anchor outward from edge to final position
@@ -790,16 +785,13 @@
                 const newAnchorIdx = result.anchors.length - 1;
 
                 // Recalculate handles for ALL anchors
-                // Edges adjacent to emerging anchor use emergingEdgeAngle (starts at halfway)
-                // All other edges use currentAngle (starts at fromOrthogonal)
+                // All edges use the same angle (currentAngle) for smooth, uniform transition
                 for (let i = 0; i < result.anchors.length; i++) {
                     const anchor = result.anchors[i];
                     const nextAnchor = result.anchors[(i + 1) % result.anchors.length];
 
-                    // Determine which angle to use for this edge
-                    // Edges adjacent to emerging anchor start at halfway point
-                    // All other edges start at fromOrthogonal and transition to toOrthogonal
-                    const edgeAngle = (i === newAnchorIdx - 1 || i === newAnchorIdx) ? emergingEdgeAngle : currentAngle;
+                    // All edges use the same interpolated angle
+                    const edgeAngle = currentAngle;
 
                     // Calculate handles using the appropriate angle
                     const dx = nextAnchor.pos.x - anchor.pos.x;
