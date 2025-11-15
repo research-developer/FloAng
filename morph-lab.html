@@ -656,20 +656,20 @@
          * Value Change Log:
          * - initialRatio: 0.2 → maintains smooth curve continuity at insertion
          * - Removed result.applyParams() call → was causing abrupt angle changes to ALL anchors
-         * - Halfway interpolation ONLY for BOTH edges adjacent to emerging anchor
-         * - Existing edges maintain their current angle (params.angle)
-         * - emergingEdgeAngle = halfwayAngle + (toOrthogonal - halfwayAngle) * t
-         * - halfwayAngle = params.angle + (toOrthogonal - params.angle) * 0.5
-         * - Edge (newAnchorIdx-1)→newAnchorIdx uses emergingEdgeAngle (incoming edge)
-         * - Edge newAnchorIdx→0 uses emergingEdgeAngle (outgoing edge)
-         * - All other edges use params.angle (no interpolation)
+         * - ALL edges now transition toward toOrthogonal angle
+         * - currentAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * t (for non-emerging edges)
+         * - emergingEdgeAngle = halfwayAngle + (toOrthogonal - halfwayAngle) * t (for emerging edges)
+         * - halfwayAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * 0.5
+         * - Edge (newAnchorIdx-1)→newAnchorIdx uses emergingEdgeAngle (starts at halfway)
+         * - Edge newAnchorIdx→0 uses emergingEdgeAngle (starts at halfway)
+         * - All other edges use currentAngle (starts at fromOrthogonal, transitions to toOrthogonal)
+         * - Final state: ALL edges reach toOrthogonal angle, forming perfect T-shapes at each anchor
          * - Separate apex calculations for handleIn and handleOut → proper bezier curve formation
-         * - Skip emergingAnchor in handle loop → prevents double-setting anchor[0].handleIn
          * - Set anchor[0].handleIn in STEP 3 using emergingEdgeAngle → matches emergingAnchor.handleOut apex
          *
          * Steps:
          * 1. Insert new anchor between anchor[0] and anchor[-1]
-         * 2. Gradually normalize all parameters to maintain orthogonality
+         * 2. Gradually normalize all parameters (positions + angles) to maintain orthogonality
          */
         function lerpShapes(from, to, t) {
             const fromSides = from.anchors.length;
@@ -743,11 +743,14 @@
 
             // STEP 2: Gradually normalize all parameters
             if (result.anchors.length === toSides) {
-                // Calculate halfway point for edges adjacent to emerging anchor ONLY
-                // Other edges maintain their current angle (params.angle)
-                const halfwayAngle = params.angle + (toOrthogonal - params.angle) * 0.5;
-                const angleDelta = toOrthogonal - halfwayAngle;
-                const emergingEdgeAngle = halfwayAngle + angleDelta * t;
+                // ALL edges transition toward toOrthogonal
+                // Edges adjacent to emerging anchor start at halfway point
+                // All other edges start at fromOrthogonal (current params.angle)
+                const currentAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * t;
+
+                // For edges adjacent to emerging anchor, start at halfway point
+                const halfwayAngle = fromOrthogonal + (toOrthogonal - fromOrthogonal) * 0.5;
+                const emergingEdgeAngle = halfwayAngle + (toOrthogonal - halfwayAngle) * t;
 
                 // Move new anchor outward from edge to final position
                 const newAnchor = result.anchors[result.anchors.length - 1];
@@ -780,19 +783,17 @@
                 // Identify the emerging anchor
                 const newAnchorIdx = result.anchors.length - 1;
 
-                // Recalculate handles for anchors
-                // ONLY edges adjacent to emerging anchor use halfway interpolation
-                // All other edges maintain their current angle (params.angle)
+                // Recalculate handles for ALL anchors
+                // Edges adjacent to emerging anchor use emergingEdgeAngle (starts at halfway)
+                // All other edges use currentAngle (starts at fromOrthogonal)
                 for (let i = 0; i < result.anchors.length; i++) {
                     const anchor = result.anchors[i];
                     const nextAnchor = result.anchors[(i + 1) % result.anchors.length];
 
                     // Determine which angle to use for this edge
-                    // BOTH edges adjacent to emerging anchor use halfway interpolation:
-                    // - Edge (newAnchorIdx-1) → newAnchorIdx
-                    // - Edge newAnchorIdx → 0
-                    // All other edges use params.angle
-                    const edgeAngle = (i === newAnchorIdx - 1 || i === newAnchorIdx) ? emergingEdgeAngle : params.angle;
+                    // Edges adjacent to emerging anchor start at halfway point
+                    // All other edges start at fromOrthogonal and transition to toOrthogonal
+                    const edgeAngle = (i === newAnchorIdx - 1 || i === newAnchorIdx) ? emergingEdgeAngle : currentAngle;
 
                     // Calculate handles using the appropriate angle
                     const dx = nextAnchor.pos.x - anchor.pos.x;
