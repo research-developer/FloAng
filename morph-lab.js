@@ -1113,7 +1113,7 @@ class MorphLab {
                 symmetry: this.currentShape.calculateSymmetry(),
                 edgeAngles: [] // Calculate if needed
             };
-            this.debugUI.render(this.currentShape, metrics, this.params);
+            this.debugUI.render(this.currentShape, metrics, timestamp);
         }
 
         // Continue render loop

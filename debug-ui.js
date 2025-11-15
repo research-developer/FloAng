@@ -51,6 +51,19 @@ class DebugUI {
     }
 
     /**
+     * Toggle debug UI on/off
+     */
+    toggle() {
+        if (this.enabled) {
+            this.disable();
+            console.log('🐛 Debug UI: Disabled');
+        } else {
+            this.enable();
+            console.log('🐛 Debug UI: Enabled');
+        }
+    }
+
+    /**
      * Render debug overlay
      */
     render(shape, metrics, timestamp) {
