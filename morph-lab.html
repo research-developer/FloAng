@@ -845,37 +845,28 @@
                         y: (apexY - nextAnchor.pos.y) * params.flow
                     };
 
-                    // For edges adjacent to emerging anchor, interpolate from stored initial values
-                    // For other edges (including emerging anchor itself), set directly to target
-                    if (isEdgeBeforeEmerging && anchor._storedHandleOut) {
-                        // Edge before emerging: interpolate anchor[newAnchorIdx-1].handleOut
-                        anchor.handleOut.x = anchor._storedHandleOut.x + (targetHandleOut.x - anchor._storedHandleOut.x) * t;
-                        anchor.handleOut.y = anchor._storedHandleOut.y + (targetHandleOut.y - anchor._storedHandleOut.y) * t;
-
-                        if (t < 0.02 || t > 0.98) {
-                            console.log(`[t=${t.toFixed(3)}] anchor[${i}].handleOut: stored=(${anchor._storedHandleOut.x.toFixed(2)},${anchor._storedHandleOut.y.toFixed(2)}) target=(${targetHandleOut.x.toFixed(2)},${targetHandleOut.y.toFixed(2)}) result=(${anchor.handleOut.x.toFixed(2)},${anchor.handleOut.y.toFixed(2)})`);
+                    // ORBIT-STABILIZER: Adjacent handles remain in their stabilizer subgroup
+                    // (they maintain relative configuration while anchor moves in its orbit)
+                    // Non-adjacent handles transform under full group action
+                    if (isEdgeBeforeEmerging || isEdgeAfterEmerging) {
+                        // Stabilizer: keep stored handle values (relative to anchor)
+                        // Handles naturally move with anchor but maintain relationship
+                        if (isEdgeBeforeEmerging && anchor._storedHandleOut) {
+                            anchor.handleOut.x = anchor._storedHandleOut.x;
+                            anchor.handleOut.y = anchor._storedHandleOut.y;
+                        }
+                        if (isEdgeAfterEmerging && nextAnchor._storedHandleIn) {
+                            nextAnchor.handleIn.x = nextAnchor._storedHandleIn.x;
+                            nextAnchor.handleIn.y = nextAnchor._storedHandleIn.y;
                         }
                     } else if (!isEdgeAfterEmerging) {
-                        // Non-adjacent edges: set directly
+                        // Full group action: recalculate using angle-based formula
                         anchor.handleOut.x = targetHandleOut.x;
                         anchor.handleOut.y = targetHandleOut.y;
-                    }
-                    // Note: emerging anchor's handleOut is handled in STEP 3
-
-                    if (isEdgeAfterEmerging && nextAnchor._storedHandleIn) {
-                        // Edge after emerging: interpolate anchor[0].handleIn
-                        nextAnchor.handleIn.x = nextAnchor._storedHandleIn.x + (targetHandleIn.x - nextAnchor._storedHandleIn.x) * t;
-                        nextAnchor.handleIn.y = nextAnchor._storedHandleIn.y + (targetHandleIn.y - nextAnchor._storedHandleIn.y) * t;
-
-                        if (t < 0.02 || t > 0.98) {
-                            console.log(`[t=${t.toFixed(3)}] anchor[${(i+1) % result.anchors.length}].handleIn: stored=(${nextAnchor._storedHandleIn.x.toFixed(2)},${nextAnchor._storedHandleIn.y.toFixed(2)}) target=(${targetHandleIn.x.toFixed(2)},${targetHandleIn.y.toFixed(2)}) result=(${nextAnchor.handleIn.x.toFixed(2)},${nextAnchor.handleIn.y.toFixed(2)})`);
-                        }
-                    } else if (!isEdgeBeforeEmerging) {
-                        // Non-adjacent edges: set directly
                         nextAnchor.handleIn.x = targetHandleIn.x;
                         nextAnchor.handleIn.y = targetHandleIn.y;
                     }
-                    // Note: emerging anchor's handleIn is handled in STEP 3
+                    // Note: emerging anchor's handles handled in STEP 3
                 }
 
                 // STEP 3: Ease new anchor's handles from tangent to orthogonal
