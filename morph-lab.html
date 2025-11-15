@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloAng Morph Lab - Continuous Vector Animation</title>
+    <link rel="stylesheet" href="morph-lab.css">
+</head>
+<body>
+    <div id="controls">
+        <h1>🧪 FloAng Morph Lab</h1>
+        <p style="font-size: 10px; color: #666; margin-bottom: 20px;">
+            Continuous vector-based morphing system
+        </p>
+
+        <h2>Current State</h2>
+        <div class="param">
+            <label>Sides: <span class="value" id="sides-value">3</span></label>
+            <input type="range" id="sides" min="3" max="12" step="1" value="3">
+        </div>
+        <div class="param">
+            <label>Flow: <span class="value" id="flow-value">-0.66</span></label>
+            <input type="range" id="flow" min="-3" max="1" step="0.01" value="-0.66">
+        </div>
+        <div class="param">
+            <label>Angle: <span class="value" id="angle-value">60°</span></label>
+            <input type="range" id="angle" min="20" max="160" step="1" value="60">
+        </div>
+
+        <h2>Morph Parameters</h2>
+        <div class="param">
+            <label>Duration (ms): <span class="value" id="duration-value">3000</span></label>
+            <input type="range" id="duration" min="500" max="10000" step="100" value="3000">
+        </div>
+        <div class="param">
+            <label>Easing Power: <span class="value" id="easing-value">3</span></label>
+            <input type="range" id="easing" min="1" max="5" step="0.1" value="3">
+        </div>
+        <div class="param">
+            <label>Insertion Position: <span class="value" id="insertion-value">0.50</span></label>
+            <input type="range" id="insertion" min="0" max="1" step="0.01" value="0.5">
+        </div>
+        <div class="param">
+            <label>Emergence Speed: <span class="value" id="emergence-value">1.0</span></label>
+            <input type="range" id="emergence" min="0.1" max="3" step="0.1" value="1.0">
+        </div>
+        <div class="param">
+            <label>Symmetry Weight: <span class="value" id="symmetry-value">1.0</span></label>
+            <input type="range" id="symmetry-weight" min="0" max="2" step="0.1" value="1.0">
+        </div>
+
+        <h2>Actions</h2>
+        <button onclick="startMorph()">▶ Start Morph (n → n+1)</button>
+        <button onclick="resetState()">⟲ Reset</button>
+        <button onclick="addFailure()">💀 Add Failure</button>
+
+        <h2>Debug Mode</h2>
+        <button onclick="toggleDebugMode()">🐛 Toggle Debug UI</button>
+        <button onclick="enableAutoDebug()">🎯 Enable Auto-Detect</button>
+        <button onclick="copySVG()">📋 Copy SVG Code</button>
+
+        <div class="param" style="margin-top: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="auto-export-svg" checked style="width: auto;">
+                <span style="font-size: 11px;">Auto-export SVG on morph complete</span>
+            </label>
+        </div>
+
+        <p style="font-size: 10px; color: #888; margin-top: 5px;">
+            Open DevTools Console and type <code>MorphDebug.help()</code>
+        </p>
+
+        <div class="metrics" id="metrics">
+            <strong>Live Metrics:</strong>
+            <span>Progress: <span id="progress-metric">0%</span></span>
+            <span>Symmetry Score: <span id="symmetry-metric">-</span></span>
+            <span>Anchor Count: <span id="anchor-metric">0</span></span>
+        </div>
+
+        <div id="hall-of-shame">
+            <h3>💀 Hall of Shame: What Didn't Work™</h3>
+            <ul id="failure-list">
+                <li>Linear interpolation of anchor positions - caused asymmetry collapse</li>
+                <li>Equal spacing enforcement - fought with natural curve flow</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="canvas" width="800" height="800"></canvas>
+    </div>
+
+    <!-- Global configuration -->
+    <script src="config.js"></script>
+
+    <!-- Debug mode scripts (optional - load for debugging) -->
+    <script src="debug-mode.js"></script>
+    <script src="golden-snapshots.js"></script>
+    <script src="console-api.js"></script>
+    <script src="debug-ui.js"></script>
+
+    <!-- Main application -->
+    <script src="morph-lab.js"></script>
+    <script>
+        // Initialize application
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

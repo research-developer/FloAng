@@ -86,3 +86,7 @@ Thumbs.db
 # tasks.json
 # tasks/
 .mcp.json
+
+# Git worktrees
+.worktrees/
+continuous-morph-animation.txt

@@ -754,23 +754,44 @@ select {
 
 /* Keyboard shortcuts help */
 .keyboard-shortcuts {
-    position: fixed;
-    bottom: 195px;
-    left: 20px;
-    background: rgba(26, 26, 26, 0.9);
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(26, 26, 26, 0.95);
     color: #888;
     padding: 10px 15px;
     border-radius: 6px;
-    border: 1px solid #333;
+    border: 2px solid #333;
     font-size: 11px;
     z-index: 100;
     max-width: 200px;
+    transition: all 0.3s ease;
+}
+
+.keyboard-shortcuts.collapsed {
+    padding: 8px;
+    max-width: 40px;
+    overflow: hidden;
+}
+
+.keyboard-shortcuts.collapsed .shortcuts-content {
+    display: none;
 }
 
 .keyboard-shortcuts h4 {
     color: #6cf;
     margin: 0 0 8px 0;
     font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.keyboard-shortcuts.collapsed h4 {
+    margin: 0;
+    font-size: 20px;
 }
 
 .keyboard-shortcuts .shortcut {

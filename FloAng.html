@@ -250,15 +250,17 @@
         <div id="canvas-area">
             <div id="svg-preview"></div>
             <div id="keyboard-hint" class="keyboard-hint"></div>
-        </div>
-    </div>
 
-    <!-- Keyboard Shortcuts Help -->
-    <div class="keyboard-shortcuts">
-        <h4>⌨️ Keyboard</h4>
-        <div class="shortcut"><span class="key">↑↓</span> <span>Flow</span></div>
-        <div class="shortcut"><span class="key">←→</span> <span>Angle</span></div>
-        <div class="shortcut"><span class="key">, .</span> <span>Sides</span></div>
+            <!-- Keyboard Shortcuts Help -->
+            <div class="keyboard-shortcuts collapsed" id="keyboard-shortcuts">
+                <h4 onclick="toggleKeyboardShortcuts()">⌨️</h4>
+                <div class="shortcuts-content">
+                    <div class="shortcut"><span class="key">↑↓</span> <span>Flow</span></div>
+                    <div class="shortcut"><span class="key">←→</span> <span>Angle</span></div>
+                    <div class="shortcut"><span class="key">, .</span> <span>Sides</span></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Pulse Animation Controls -->
@@ -2228,9 +2230,11 @@
         function adjustAngle(delta) {
             const input = document.getElementById('handle-angle');
             let newValue = parseInt(input.value) + delta;
-            newValue = Math.max(parameterLimits.angle.min, Math.min(parameterLimits.angle.max, newValue));
+            const minAngle = parseFloat(input.min);
+            const maxAngle = parseFloat(input.max);
+            newValue = Math.max(minAngle, Math.min(maxAngle, newValue));
             input.value = newValue;
-            onAngleChange();
+            updateAngleSlider();
         }
 
         function adjustSpin(delta) {
@@ -2365,6 +2369,10 @@
         // ===== KEYBOARD CONTROLS =====
 
         let keyboardListenerCleanup = null;
+        let pressedKeys = new Set();
+        let keyboardAnimationFrame = null;
+        let lastKeyboardUpdate = 0;
+        let keyPressTimes = new Map(); // Track when each key was first pressed
 
         function setupKeyboardControls() {
             // Clean up old listener
@@ -2372,55 +2380,138 @@
                 keyboardListenerCleanup();
             }
 
-            const handler = function(event) {
+            const keydownHandler = function(event) {
                 // Don't intercept if user is typing in an input
                 if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
                     return;
                 }
 
-                let handled = false;
-
-                switch(event.key) {
-                    case 'ArrowUp':
-                        adjustFlow(0.01);
-                        handled = true;
-                        break;
-                    case 'ArrowDown':
-                        adjustFlow(-0.01);
-                        handled = true;
-                        break;
-                    case 'ArrowLeft':
-                        adjustAngle(-1);
-                        handled = true;
-                        break;
-                    case 'ArrowRight':
-                        adjustAngle(1);
-                        handled = true;
-                        break;
-                    case '.':
-                    case '>':
-                        adjustSides(1);
-                        handled = true;
-                        break;
-                    case ',':
-                    case '<':
-                        adjustSides(-1);
-                        handled = true;
-                        break;
-                }
-
-                if (handled) {
+                const validKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ',', '.', '<', '>'];
+                if (validKeys.includes(event.key)) {
                     event.preventDefault();
+
+                    // Track when key was first pressed (for easing)
+                    const isFirstPress = !pressedKeys.has(event.key);
+                    if (isFirstPress) {
+                        keyPressTimes.set(event.key, performance.now());
+
+                        // Apply immediate action on first press (single tap support)
+                        switch(event.key) {
+                            case 'ArrowUp': adjustFlow(0.01); break;
+                            case 'ArrowDown': adjustFlow(-0.01); break;
+                            case 'ArrowLeft': adjustAngle(-1); break;
+                            case 'ArrowRight': adjustAngle(1); break;
+                            case '.':
+                            case '>': adjustSides(1); break;
+                            case ',':
+                            case '<': adjustSides(-1); break;
+                        }
+                    }
+
+                    pressedKeys.add(event.key);
                     showKeyboardHint(event.key);
+
+                    // Start animation loop if not already running (for holding)
+                    if (!keyboardAnimationFrame) {
+                        keyboardAnimationFrame = requestAnimationFrame(updateFromKeyboard);
+                    }
                 }
             };
 
-            document.addEventListener('keydown', handler);
+            const keyupHandler = function(event) {
+                pressedKeys.delete(event.key);
+                keyPressTimes.delete(event.key);
+
+                // Stop animation loop if no keys pressed
+                if (pressedKeys.size === 0 && keyboardAnimationFrame) {
+                    cancelAnimationFrame(keyboardAnimationFrame);
+                    keyboardAnimationFrame = null;
+                }
+            };
+
+            document.addEventListener('keydown', keydownHandler);
+            document.addEventListener('keyup', keyupHandler);
 
             // Return cleanup function
             keyboardListenerCleanup = () => {
-                document.removeEventListener('keydown', handler);
+                document.removeEventListener('keydown', keydownHandler);
+                document.removeEventListener('keyup', keyupHandler);
+                if (keyboardAnimationFrame) {
+                    cancelAnimationFrame(keyboardAnimationFrame);
+                    keyboardAnimationFrame = null;
+                }
+                pressedKeys.clear();
+                keyPressTimes.clear();
             };
+        }
+
+        // Easing function for keyboard acceleration (ease-in-out-cubic)
+        function keyboardEasing(t) {
+            // t is time in seconds
+            // Starts slow, accelerates, then caps
+            const maxTime = 1.5; // Max acceleration time in seconds
+            const normalizedTime = Math.min(t / maxTime, 1);
+
+            // Ease-in-out cubic curve
+            if (normalizedTime < 0.5) {
+                return 4 * normalizedTime * normalizedTime * normalizedTime;
+            } else {
+                return 1 - Math.pow(-2 * normalizedTime + 2, 3) / 2;
+            }
+        }
+
+        function getAccelerationMultiplier(key) {
+            const startTime = keyPressTimes.get(key);
+            if (!startTime) return 0.3; // Slow start if no time tracked
+
+            const elapsedTime = (performance.now() - startTime) / 1000; // Convert to seconds
+            const baseSpeed = 0.3; // Minimum speed multiplier
+            const maxSpeed = 3.0; // Maximum speed multiplier
+
+            const eased = keyboardEasing(elapsedTime);
+            return baseSpeed + (maxSpeed - baseSpeed) * eased;
+        }
+
+        function updateFromKeyboard(timestamp) {
+            // Throttle to ~60fps
+            if (timestamp - lastKeyboardUpdate < 16) {
+                keyboardAnimationFrame = requestAnimationFrame(updateFromKeyboard);
+                return;
+            }
+            lastKeyboardUpdate = timestamp;
+
+            // Apply all currently pressed keys with acceleration
+            if (pressedKeys.has('ArrowUp')) {
+                const mult = getAccelerationMultiplier('ArrowUp');
+                adjustFlow(0.01 * mult);
+            }
+            if (pressedKeys.has('ArrowDown')) {
+                const mult = getAccelerationMultiplier('ArrowDown');
+                adjustFlow(-0.01 * mult);
+            }
+            if (pressedKeys.has('ArrowLeft')) {
+                const mult = getAccelerationMultiplier('ArrowLeft');
+                adjustAngle(-1 * mult);
+            }
+            if (pressedKeys.has('ArrowRight')) {
+                const mult = getAccelerationMultiplier('ArrowRight');
+                adjustAngle(1 * mult);
+            }
+            if (pressedKeys.has('.') || pressedKeys.has('>')) {
+                const mult = getAccelerationMultiplier('.') || getAccelerationMultiplier('>');
+                adjustSides(1 * mult);
+            }
+            if (pressedKeys.has(',') || pressedKeys.has('<')) {
+                const mult = getAccelerationMultiplier(',') || getAccelerationMultiplier('<');
+                adjustSides(-1 * mult);
+            }
+
+            // Continue animation loop
+            if (pressedKeys.size > 0) {
+                keyboardAnimationFrame = requestAnimationFrame(updateFromKeyboard);
+            } else {
+                keyboardAnimationFrame = null;
+            }
         }
 
         function adjustSides(delta) {
@@ -2428,8 +2519,7 @@
             let newValue = parseInt(input.value) + delta;
             newValue = Math.max(1, Math.min(12, newValue));
             input.value = newValue;
-            document.getElementById('sides-value').textContent = newValue;
-            updatePreview();
+            updateSidesAndAngleRange();
         }
 
         function showKeyboardHint(key) {
@@ -2455,6 +2545,11 @@
                     }, 800);
                 }
             }
+        }
+
+        function toggleKeyboardShortcuts() {
+            const shortcutsEl = document.getElementById('keyboard-shortcuts');
+            shortcutsEl.classList.toggle('collapsed');
         }
 
         // Initialize on load
