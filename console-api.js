@@ -24,8 +24,40 @@ class ConsoleAPI {
         this.debugMode = debugMode;
         this.goldenSnapshots = goldenSnapshots;
 
-        console.log('🔧 MorphDebug API initialized');
-        console.log('Type MorphDebug.help() for available commands');
+        // Display welcome message
+        console.log('%c🐛 FloAng Morph Lab - Debug Mode Active', 'font-size: 16px; font-weight: bold; color: #6cf;');
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #333;');
+        console.log('');
+        console.log('%cQuick Start:', 'font-weight: bold; color: #6cf;');
+        console.log('  1. Type %cMorphDebug.help()%c to see all available commands', 'background: #222; color: #f6c; padding: 2px 4px; border-radius: 3px;', '');
+        console.log('  2. Enable auto-detection: %cMorphDebug.enableAutoDetect()%c', 'background: #222; color: #f6c; padding: 2px 4px; border-radius: 3px;', '');
+        console.log('  3. Start a morph to begin capturing frames');
+        console.log('');
+        console.log('%cPopular Commands:', 'font-weight: bold; color: #6cf;');
+        console.log('  • %cMorphDebug.getMetrics()%c       - Get current animation metrics', 'background: #222; color: #4a9; padding: 2px 4px; border-radius: 3px;', '');
+        console.log('  • %cMorphDebug.captureGolden(name)%c - Save known-good state', 'background: #222; color: #4a9; padding: 2px 4px; border-radius: 3px;', '');
+        console.log('  • %cMorphDebug.pause()%c            - Pause animation', 'background: #222; color: #4a9; padding: 2px 4px; border-radius: 3px;', '');
+        console.log('  • %cMorphDebug.step()%c             - Step forward one frame', 'background: #222; color: #4a9; padding: 2px 4px; border-radius: 3px;', '');
+        console.log('  • %cMorphDebug.exportFrames()%c     - Download frame data as JSON', 'background: #222; color: #4a9; padding: 2px 4px; border-radius: 3px;', '');
+        console.log('');
+        console.log('%cExample Workflow:', 'font-weight: bold; color: #fa4;');
+        console.log('  %c// Enable automatic anomaly detection', 'color: #888; font-style: italic;');
+        console.log('  %cMorphDebug.enableAutoDetect();', 'color: #f6c;');
+        console.log('  %cstartMorph();  // Will auto-pause if abrupt change detected', 'color: #f6c;');
+        console.log('');
+        console.log('  %c// If paused, inspect the problem', 'color: #888; font-style: italic;');
+        console.log('  %cMorphDebug.getMetrics();  // See symmetry, angles, etc.', 'color: #4a9;');
+        console.log('  %cMorphDebug.getAnomalies();  // See what triggered pause', 'color: #4a9;');
+        console.log('');
+        console.log('  %c// Step through frame-by-frame', 'color: #888; font-style: italic;');
+        console.log('  %cMorphDebug.step();  // Next frame', 'color: #6cf;');
+        console.log('  %cMorphDebug.stepBack();  // Previous frame', 'color: #6cf;');
+        console.log('');
+        console.log('%cDocumentation:', 'font-weight: bold; color: #6cf;');
+        console.log('  See DEBUG_MODE_README.md for complete guide');
+        console.log('');
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #333;');
+        console.log('');
     }
 
     /**
