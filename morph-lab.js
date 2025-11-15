@@ -844,13 +844,27 @@ class SnapshotDebugger {
 
         console.log('SVG comparison:\n' + svg);
 
-        // Save to file for viewing
-        const blob = new Blob([svg], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'morph-snapshots.svg';
-        a.click();
+        // Save to file for viewing (with optional auto-export checkbox support)
+        try {
+            // Check if auto-export is enabled (optional element)
+            const autoExportCheckbox = document.getElementById('auto-export-svg');
+            const shouldAutoExport = !autoExportCheckbox || autoExportCheckbox.checked;
+
+            if (shouldAutoExport) {
+                const blob = new Blob([svg], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'morph-snapshots.svg';
+                a.click();
+                console.log('📥 SVG snapshot downloaded');
+            } else {
+                console.log('📋 SVG snapshot logged to console (auto-export disabled)');
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not auto-export SVG:', error.message);
+            console.log('SVG data is available in console log above');
+        }
     }
 
     reset() {
@@ -882,16 +896,7 @@ class MorphLab {
         this.snapshotDebugger = new SnapshotDebugger(this.params);
 
         // Initialize debug mode (if debug files are loaded)
-        if (typeof DebugMode !== 'undefined') {
-            this.debugMode = new DebugMode();
-            this.goldenSnapshots = new GoldenSnapshots();
-            this.debugUI = new DebugUI(canvasElement, this.debugMode);
-
-            // Initialize console API
-            if (typeof MorphDebug !== 'undefined' && MorphDebug.init) {
-                MorphDebug.init(this, this.debugMode, this.goldenSnapshots);
-            }
-        }
+        this._initializeDebugMode(canvasElement);
 
         // Create initial shape
         this.currentShape = Shape.createPolygon(this.params.sides, CANVAS_CONFIG.radius, CANVAS_CONFIG.centerX, CANVAS_CONFIG.centerY, 0);
@@ -902,6 +907,73 @@ class MorphLab {
 
         // Start render loop
         requestAnimationFrame(this.render.bind(this));
+    }
+
+    /**
+     * Initialize debug mode with robust dependency checking
+     * @private
+     */
+    _initializeDebugMode(canvasElement) {
+        const missingDeps = [];
+
+        // Check for debug mode dependencies
+        if (typeof DebugMode === 'undefined') {
+            missingDeps.push('DebugMode');
+        }
+        if (typeof GoldenSnapshots === 'undefined') {
+            missingDeps.push('GoldenSnapshots');
+        }
+        if (typeof DebugUI === 'undefined') {
+            missingDeps.push('DebugUI');
+        }
+        if (typeof ConsoleAPI === 'undefined') {
+            missingDeps.push('ConsoleAPI (MorphDebug)');
+        }
+
+        // If any dependencies are missing, log info and return
+        if (missingDeps.length > 0) {
+            console.log(
+                '%c⚙️ Debug Mode: Disabled',
+                'color: #888; font-weight: bold'
+            );
+            console.log(
+                '%cMissing dependencies: ' + missingDeps.join(', '),
+                'color: #666; font-size: 10px'
+            );
+            console.log(
+                '%cTo enable debug mode, include debug-mode.js, debug-ui.js, golden-snapshots.js, and console-api.js',
+                'color: #666; font-size: 10px'
+            );
+            return;
+        }
+
+        // All dependencies present - initialize debug mode
+        try {
+            this.debugMode = new DebugMode();
+            this.goldenSnapshots = new GoldenSnapshots();
+            this.debugUI = new DebugUI(canvasElement, this.debugMode);
+
+            // Initialize console API
+            if (typeof MorphDebug !== 'undefined' && MorphDebug.init) {
+                MorphDebug.init(this, this.debugMode, this.goldenSnapshots);
+            }
+
+            console.log(
+                '%c🐛 Debug Mode: Active',
+                'color: #6cf; font-weight: bold'
+            );
+            console.log(
+                '%cType MorphDebug.help() for available commands',
+                'color: #6cf; font-size: 10px'
+            );
+        } catch (error) {
+            console.error('❌ Failed to initialize debug mode:', error);
+            console.error('Debug features will be unavailable');
+            // Clear any partially initialized debug objects
+            this.debugMode = null;
+            this.goldenSnapshots = null;
+            this.debugUI = null;
+        }
     }
 
     /**
