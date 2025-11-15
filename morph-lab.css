@@ -1,0 +1,129 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0a0a0a;
+    color: #e0e0e0;
+    font-family: 'Monaco', monospace;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#controls {
+    width: 350px;
+    background: #1a1a1a;
+    border-right: 2px solid #333;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+#canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+canvas {
+    border: 1px solid #333;
+    background: #0a0a0a;
+}
+
+h1 {
+    color: #6cf;
+    font-size: 18px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #6cf;
+    padding-bottom: 10px;
+}
+
+h2 {
+    color: #f6c;
+    font-size: 14px;
+    margin: 20px 0 10px 0;
+}
+
+.param {
+    margin: 15px 0;
+}
+
+.param label {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.param input[type="range"] {
+    width: 100%;
+}
+
+.param .value {
+    color: #6cf;
+    font-weight: bold;
+    float: right;
+}
+
+button {
+    background: #6cf;
+    color: #0a0a0a;
+    border: none;
+    padding: 10px 20px;
+    font-family: 'Monaco', monospace;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 5px 5px 5px 0;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #8ef;
+}
+
+button:active {
+    background: #4ad;
+}
+
+#hall-of-shame {
+    background: #1a0a0a;
+    border: 1px solid #600;
+    padding: 10px;
+    margin-top: 20px;
+    font-size: 10px;
+    color: #f66;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#hall-of-shame h3 {
+    color: #f66;
+    font-size: 11px;
+    margin-bottom: 5px;
+}
+
+#hall-of-shame li {
+    margin: 3px 0;
+    padding-left: 10px;
+    list-style-position: inside;
+}
+
+.metrics {
+    background: #0a1a0a;
+    border: 1px solid #060;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 10px;
+    color: #6f6;
+}
+
+.metrics span {
+    display: block;
+    margin: 2px 0;
+}
