@@ -61,15 +61,11 @@ class GoldenSnapshots {
             const anchor = shape.anchors[i];
             const nextAnchor = shape.anchors[(i + 1) % shape.anchors.length];
 
-            // Edge angle
-            const dx = nextAnchor.pos.x - anchor.pos.x;
-            const dy = nextAnchor.pos.y - anchor.pos.y;
-            const baseLength = Math.sqrt(dx * dx + dy * dy);
-
-            const cp1 = anchor.getHandleOutAbs();
-            const height = Math.abs((cp1.y - anchor.pos.y) * dx - (cp1.x - anchor.pos.x) * dy) / baseLength;
-            const angle = Math.atan((2 * height) / (baseLength / 2)) * (180 / Math.PI);
+            // Edge angle (using shared utility)
+            const angle = GeometryUtils.calculateEdgeAngle(anchor, nextAnchor);
             metrics.edgeAngles.push(angle);
+
+            const baseLength = GeometryUtils.distance(anchor.pos, nextAnchor.pos);
 
             // Handle magnitudes
             const handleInMag = Math.sqrt(anchor.handleIn.x ** 2 + anchor.handleIn.y ** 2);

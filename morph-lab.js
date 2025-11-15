@@ -260,6 +260,41 @@ class GeometryUtils {
     static magnitude(v) {
         return Math.sqrt(v.x * v.x + v.y * v.y);
     }
+
+    /**
+     * Calculate the angle of a bezier edge formed by two anchors
+     * Returns the angle in degrees based on the control point height
+     *
+     * @param {AnchorPoint} anchor1 - The first anchor point
+     * @param {AnchorPoint} anchor2 - The second anchor point
+     * @returns {number} The edge angle in degrees
+     */
+    static calculateEdgeAngle(anchor1, anchor2) {
+        const dx = anchor2.pos.x - anchor1.pos.x;
+        const dy = anchor2.pos.y - anchor1.pos.y;
+        const baseLength = Math.sqrt(dx * dx + dy * dy);
+
+        const cp1 = anchor1.getHandleOutAbs();
+        const height = Math.abs((cp1.y - anchor1.pos.y) * dx - (cp1.x - anchor1.pos.x) * dy) / baseLength;
+        const angle = Math.atan((2 * height) / (baseLength / 2)) * (180 / Math.PI);
+
+        return angle;
+    }
+
+    /**
+     * Calculate all edge angles for a shape
+     * @param {Shape} shape - The shape to calculate edge angles for
+     * @returns {Array<number>} Array of angles in degrees
+     */
+    static calculateAllEdgeAngles(shape) {
+        const angles = [];
+        for (let i = 0; i < shape.anchors.length; i++) {
+            const anchor = shape.anchors[i];
+            const nextAnchor = shape.anchors[(i + 1) % shape.anchors.length];
+            angles.push(this.calculateEdgeAngle(anchor, nextAnchor));
+        }
+        return angles;
+    }
 }
 
 /**

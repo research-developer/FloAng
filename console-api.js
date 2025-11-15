@@ -213,21 +213,7 @@ class ConsoleAPI {
     }
 
     _calculateEdgeAngles(shape) {
-        const angles = [];
-        for (let i = 0; i < shape.anchors.length; i++) {
-            const anchor = shape.anchors[i];
-            const nextAnchor = shape.anchors[(i + 1) % shape.anchors.length];
-
-            const dx = nextAnchor.pos.x - anchor.pos.x;
-            const dy = nextAnchor.pos.y - anchor.pos.y;
-            const baseLength = Math.sqrt(dx * dx + dy * dy);
-
-            const cp1 = anchor.getHandleOutAbs();
-            const height = Math.abs((cp1.y - anchor.pos.y) * dx - (cp1.x - anchor.pos.x) * dy) / baseLength;
-            const angle = Math.atan((2 * height) / (baseLength / 2)) * (180 / Math.PI);
-            angles.push(angle);
-        }
-        return angles;
+        return GeometryUtils.calculateAllEdgeAngles(shape);
     }
 
     getAnchorHandles(anchorIndex) {
